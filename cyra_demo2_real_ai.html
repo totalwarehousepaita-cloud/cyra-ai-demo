@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',system-ui,sans-serif;background:#040c14;color:#e2f0eb;font-size:13px;min-height:100vh}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#061018}::-webkit-scrollbar-thumb{background:rgba(0,210,120,.4);border-radius:2px}
+.dot{width:5px;height:5px;border-radius:50%;background:#00d278;animation:pu 1.5s infinite;display:inline-block}
+@keyframes pu{0%,100%{opacity:1}50%{opacity:.2}}
+.screen{display:none}
+.screen.on{display:flex;flex-direction:column;min-height:100vh}
+
+/* LOGIN */
+#sl{background:linear-gradient(135deg,#010608,#030e18);align-items:center;justify-content:center;padding:20px}
+.lcard{background:rgba(6,16,24,.95);border:1px solid rgba(0,210,120,.2);border-radius:14px;padding:36px 32px;width:100%;max-width:400px}
+.logo{font-family:monospace;font-size:44px;font-weight:700;letter-spacing:10px;background:linear-gradient(135deg,#00d278,#00f090,#00b4f0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:block;text-align:center}
+.lsub{font-size:9px;letter-spacing:3px;color:#5a9080;display:block;text-align:center;margin-top:4px;text-transform:uppercase}
+.lline{width:44px;height:1px;margin:12px auto 20px;background:linear-gradient(90deg,transparent,#00d278,transparent)}
+.lcred{background:rgba(0,210,120,.08);border:1px solid rgba(0,210,120,.3);border-radius:6px;padding:8px 12px;margin-bottom:18px;font-size:10px;color:#00d278;font-family:monospace}
+input{width:100%;background:rgba(3,9,18,.8);border:1px solid rgba(0,210,120,.15);border-radius:6px;color:#e2f0eb;padding:10px 12px;font-size:13px;margin-bottom:10px;outline:none}
+input:focus{border-color:#00d278}
+.lbtn{width:100%;background:linear-gradient(135deg,#00d278,#009855);color:#020e07;font-size:13px;font-weight:700;padding:12px;border-radius:6px;border:none;cursor:pointer;margin-bottom:8px;letter-spacing:1px}
+.lbtn:hover{opacity:.9}
+.ldbtn{width:100%;background:transparent;border:1px solid rgba(0,180,240,.25);color:#00b4f0;font-size:10px;padding:8px;border-radius:6px;cursor:pointer;letter-spacing:1px}
+.ldbtn:hover{background:rgba(0,180,240,.08)}
+
+/* APP */
+#sa{background:#040c14}
+.ah{height:50px;background:rgba(6,16,24,.97);border-bottom:1px solid rgba(0,210,120,.13);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0}
+.alogo{font-family:monospace;font-size:17px;font-weight:700;letter-spacing:4px;color:#00d278}
+.hdiv{width:1px;height:20px;background:rgba(0,210,120,.15)}
+.cbadge{display:flex;align-items:center;gap:5px;background:rgba(15,32,48,1);border:1px solid rgba(0,210,120,.15);border-radius:6px;padding:2px 9px}
+.ccode{font-family:monospace;font-size:11px;font-weight:700;color:#e2f0eb;letter-spacing:1px}
+.ctype{font-size:8px;font-family:monospace;padding:1px 5px;background:rgba(0,210,120,.1);border-radius:3px;color:#00d278}
+.ibadge{display:flex;align-items:center;gap:4px;background:rgba(0,180,240,.08);border:1px solid rgba(0,180,240,.2);border-radius:20px;padding:2px 8px;font-size:8px;color:#00b4f0;font-weight:700;letter-spacing:.5px;font-family:monospace}
+.hr{margin-left:auto;display:flex;align-items:center;gap:7px}
+.aip{display:flex;align-items:center;gap:4px;font-size:8px;color:#00d278;background:rgba(0,210,120,.08);border:1px solid rgba(0,210,120,.25);padding:2px 8px;border-radius:4px;font-family:monospace;letter-spacing:.5px}
+.bnew{background:rgba(0,210,120,.08);border:1px solid rgba(0,210,120,.3);color:#00d278;font-size:9px;padding:5px 10px;border-radius:5px;cursor:pointer;font-weight:700;letter-spacing:.5px}
+.bnew:hover{background:rgba(0,210,120,.15)}
+.blg{background:none;border:1px solid rgba(0,210,120,.15);color:#5a9080;width:26px;height:26px;border-radius:5px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center}
+.blg:hover{border-color:rgba(240,64,64,.5);color:#f04040}
+.abody{display:flex;flex:1;min-height:calc(100vh - 50px)}
+
+/* SIDEBAR */
+.side{width:190px;min-width:190px;background:rgba(6,16,24,.98);border-right:1px solid rgba(0,210,120,.13);display:flex;flex-direction:column}
+.spt{padding:10px 12px 8px;border-bottom:1px solid rgba(0,210,120,.1)}
+.spid{font-family:monospace;font-size:8px;color:#5a9080;letter-spacing:1px;text-transform:uppercase}
+.spval{font-family:monospace;font-size:10px;color:#00d278;font-weight:700;margin-top:1px}
+.spb{margin-top:6px}
+.spbl{font-size:8px;color:#5a9080;display:flex;justify-content:space-between;margin-bottom:3px}
+.spbar{height:3px;background:#040c14;border-radius:2px;overflow:hidden}
+.spfill{height:100%;background:linear-gradient(90deg,#00d278,#00b4f0);border-radius:2px;transition:width .5s}
+.zl{flex:1;padding:5px 0}
+.zi{display:flex;align-items:center;gap:7px;padding:8px 12px;cursor:pointer;border-left:3px solid transparent;transition:all .2s}
+.zi:hover{background:rgba(0,210,120,.06)}
+.zi.on{background:rgba(0,210,120,.07);border-left-color:#00d278}
+.zi.dn{border-left-color:#00d278}
+.zic{width:26px;height:26px;border-radius:5px;background:rgba(15,32,48,1);border:1px solid rgba(0,210,120,.13);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.zi.on .zic{border-color:#00d278;background:rgba(0,210,120,.1)}
+.zn{font-size:9px;font-weight:600;color:#e2f0eb;font-family:monospace;letter-spacing:.3px}
+.zm{margin-top:2px;font-size:7px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;padding:1px 4px;border-radius:6px;display:inline-block}
+.zmpend{background:rgba(30,72,56,.3);color:#1e4838;border:1px solid rgba(30,72,56,.4)}
+.zmact{background:rgba(0,180,240,.1);color:#00b4f0;border:1px solid rgba(0,180,240,.25)}
+.zmdn{background:rgba(0,210,120,.08);color:#00d278;border:1px solid rgba(0,210,120,.2)}
+.sft{padding:10px 12px;border-top:1px solid rgba(0,210,120,.1)}
+.sfr{display:flex;justify-content:space-between;font-size:8px;color:#1e4838;margin-bottom:2px}
+.snew{padding:10px 12px;border-top:1px solid rgba(0,210,120,.1)}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;background:#040c14;display:flex;flex-direction:column}
+.fwrap{padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.fhdr{background:rgba(11,24,36,1);border:1px solid rgba(0,210,120,.13);border-radius:10px;padding:13px 16px;display:flex;align-items:center;gap:12px}
+.ftitle{font-family:monospace;font-size:15px;font-weight:700;letter-spacing:2px;text-transform:uppercase}
+.fsub{font-size:8px;color:#5a9080;margin-top:2px;font-family:monospace}
+.fchip{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:8px;font-family:monospace;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:4px;border:1px solid}
+.fpend{color:#5a9080;border-color:rgba(0,210,120,.13)}
+.frdy{color:#00d278;border-color:rgba(0,210,120,.28);background:rgba(0,210,120,.06);animation:gp 2s infinite}
+@keyframes gp{0%,100%{box-shadow:0 0 0 0 rgba(0,210,120,.15)}50%{box-shadow:0 0 0 3px rgba(0,210,120,0)}}
+
+/* UPLOAD SLOT */
+.uslot{background:rgba(11,24,36,1);border:1px solid rgba(0,210,120,.13);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:9px;transition:border-color .2s}
+.uslot.loaded{border-color:rgba(0,210,120,.3)}
+.uslot.analyzed{border-color:rgba(0,210,120,.4)}
+.ulbl{font-family:monospace;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#5a9080;display:flex;align-items:center;gap:6px}
+.udz{border:2px dashed rgba(0,210,120,.2);border-radius:6px;min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;cursor:pointer;transition:all .22s;position:relative;overflow:hidden;background:rgba(0,210,120,.01)}
+.udz:hover{border-color:rgba(0,210,120,.5);background:rgba(0,210,120,.06)}
+.udz.hi{min-height:0;border-style:solid;border-color:rgba(0,210,120,.3)}
+.udz input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:2}
+.uic{font-size:28px;color:#1e4838}
+.utit{font-family:monospace;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#5a9080}
+.uhint{font-size:9px;color:#1e4838}
+.uimg{width:100%;max-height:320px;object-fit:contain;display:block;border-radius:5px;position:relative;z-index:0}
+.urmv{position:absolute;top:7px;right:7px;background:rgba(240,64,64,.85);border:none;color:#fff;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;z-index:5}
+
+/* BOUNDING BOX OVERLAY */
+.bbox-container{position:relative;display:inline-block;width:100%}
+.bbox{position:absolute;border:2px solid;border-radius:3px;cursor:pointer;transition:opacity .2s}
+.bbox:hover{opacity:.8}
+.bbox-lbl{position:absolute;top:-19px;left:0;font-family:monospace;font-size:8px;font-weight:700;letter-spacing:.5px;padding:2px 5px;border-radius:2px;white-space:nowrap;background:rgba(4,12,20,.9);border:1px solid currentColor}
+.bbox-idx{position:absolute;bottom:-15px;right:0;font-family:monospace;font-size:7px;padding:1px 4px;border-radius:2px;background:rgba(4,12,20,.9);border:1px solid currentColor}
+.corner{position:absolute;width:7px;height:7px}
+.corner.tl{top:-1px;left:-1px;border-top:2px solid currentColor;border-left:2px solid currentColor}
+.corner.tr{top:-1px;right:-1px;border-top:2px solid currentColor;border-right:2px solid currentColor}
+.corner.bl{bottom:-1px;left:-1px;border-bottom:2px solid currentColor;border-left:2px solid currentColor}
+.corner.br{bottom:-1px;right:-1px;border-bottom:2px solid currentColor;border-right:2px solid currentColor}
+.scan-beam{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#00d278,transparent);animation:scanb 2.2s linear infinite;pointer-events:none;z-index:3}
+@keyframes scanb{from{top:0}to{top:100%}}
+.grid-overlay{position:absolute;inset:0;pointer-events:none;opacity:.06;background-image:linear-gradient(rgba(0,210,120,1) 1px,transparent 1px),linear-gradient(90deg,rgba(0,210,120,1) 1px,transparent 1px);background-size:10% 25%}
+.iicl-lbl{position:absolute;top:7px;left:7px;background:rgba(4,12,20,.88);border:1px solid rgba(0,210,120,.3);padding:2px 7px;border-radius:3px;font-family:monospace;font-size:7px;color:#00d278;letter-spacing:.5px;z-index:4}
+
+/* AI BAR */
+.aibar{background:rgba(11,24,36,1);border:1px solid rgba(0,210,120,.13);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.aieng{display:flex;align-items:center;gap:7px;background:rgba(0,210,120,.06);border:1px solid rgba(0,210,120,.18);border-radius:5px;padding:5px 10px;flex-shrink:0}
+.aieng-t{font-family:monospace;font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#00d278}
+.aieng-s{font-size:7px;color:#5a9080;margin-top:1px;font-family:monospace}
+.aiinfo{flex:1;font-size:9px;color:#5a9080;font-family:monospace}
+.pbtnw{display:flex;justify-content:center;padding:2px}
+.pbtn{background:linear-gradient(135deg,#00d278,#00b4f0);color:#020e07;font-family:monospace;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:14px 36px;border-radius:6px;border:none;cursor:pointer;box-shadow:0 6px 24px rgba(0,210,120,.3)}
+.pbtn:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(0,210,120,.4)}
+.pbtn:disabled{opacity:.3;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* PROCESSING */
+.procv{background:rgba(11,24,36,1);border:1px solid rgba(0,210,120,.3);border-radius:10px;padding:28px;text-align:center}
+.pring{width:72px;height:72px;border-radius:50%;border:1px solid rgba(0,210,120,.2);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;animation:rot 4s linear infinite}
+.pring-i{width:58px;height:58px;border-radius:50%;border:2px solid transparent;border-top-color:#00d278;border-right-color:#00b4f0;animation:spin 1s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.plbl{font-family:monospace;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#00d278}
+.psub{font-size:9px;color:#5a9080;font-family:monospace;margin-top:3px}
+.pbar{height:3px;background:#040c14;border-radius:2px;overflow:hidden;margin:12px auto 0;width:260px}
+.pfill{height:100%;background:linear-gradient(90deg,#00d278,#00b4f0);border-radius:2px;width:0%;transition:width .4s}
+.psteps{margin-top:14px;display:flex;flex-direction:column;gap:4px;text-align:left;max-width:300px;margin-left:auto;margin-right:auto}
+.ps{display:flex;align-items:center;gap:8px;padding:5px 10px;background:rgba(15,32,48,1);border-radius:5px;font-size:9px;font-family:monospace}
+.ps.done{color:#00d278}.ps.act{color:#00b4f0}.ps.pend{color:#1e4838}
+.psd{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.ps.done .psd{background:#00d278}.ps.act .psd{background:#00b4f0;animation:pu .7s infinite}.ps.pend .psd{background:#1e4838}
+
+/* ERROR */
+.errv{background:rgba(240,64,64,.06);border:1px solid rgba(240,64,64,.3);border-radius:10px;padding:28px;text-align:center}
+.errtit{font-family:monospace;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#f04040;margin:12px 0 8px}
+.errsub{font-size:11px;color:#5a9080;margin-bottom:8px}
+.errcode{font-family:monospace;font-size:9px;color:#1e4838;background:rgba(0,0,0,.3);border-radius:5px;padding:6px 12px;display:inline-block;margin-bottom:16px;max-width:400px;word-break:break-word}
+.errbtn{background:linear-gradient(135deg,#00d278,#009855);color:#020e07;font-family:monospace;font-size:12px;font-weight:700;padding:11px 24px;border-radius:6px;border:none;cursor:pointer;letter-spacing:1px}
+
+/* INVALID */
+.invv{background:rgba(240,168,0,.06);border:1px solid rgba(240,168,0,.3);border-radius:7px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px}
+.invtit{font-family:monospace;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#f0a800;margin-bottom:3px}
+.invsub{font-size:10px;color:#5a9080}
+
+/* FINDINGS */
+.fc2{background:rgba(11,24,36,1);border:1px solid rgba(0,210,120,.13);border-radius:7px;padding:9px 11px;display:flex;align-items:flex-start;gap:9px;cursor:pointer;transition:all .2s;margin-bottom:6px}
+.fc2:hover{border-color:rgba(0,210,120,.35);transform:translateX(2px)}
+.fc2num{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:9px;font-weight:700;flex-shrink:0;border:1px solid;margin-top:1px}
+.fc2code{font-family:monospace;font-size:11px;font-weight:700;color:#f0a800}
+.fc2loc{font-family:monospace;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;background:rgba(0,210,120,.08);border:1px solid rgba(0,210,120,.2);color:#00d278;letter-spacing:1px}
+.fc2desc{font-size:10px;color:#e2f0eb;margin-top:2px}
+.fc2sub{font-size:8px;color:#5a9080;font-family:monospace;margin-top:2px}
+.sb{display:inline-flex;align-items:center;padding:1px 6px;border-radius:20px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;border:1px solid;font-family:monospace}
+.sl{background:rgba(0,210,120,.1);color:#00d278;border-color:rgba(0,210,120,.25)}
+.sm{background:rgba(0,180,240,.1);color:#00b4f0;border-color:rgba(0,180,240,.25)}
+.sh{background:rgba(240,168,0,.1);color:#f0a800;border-color:rgba(240,168,0,.25)}
+.sc{background:rgba(240,64,64,.1);color:#f04040;border-color:rgba(240,64,64,.25)}
+
+/* RESULTS */
+.rcard{background:rgba(11,24,36,1);border:1px solid rgba(0,210,120,.13);border-radius:10px;padding:13px 14px;margin-bottom:10px}
+.rtit{font-family:monospace;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#00d278;margin-bottom:10px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.sc2{background:rgba(11,24,36,1);border:1px solid rgba(0,210,120,.13);border-radius:6px;padding:10px;text-align:center}
+.scv{font-family:monospace;font-size:20px;font-weight:700;line-height:1;margin-bottom:2px}
+.scl{font-size:8px;color:#5a9080;text-transform:uppercase;letter-spacing:1px}
+
+/* RESULTS IMAGE+FINDINGS SPLIT */
+.rpanel{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rpanel-img{background:rgba(11,24,36,1);border:1px solid rgba(0,210,120,.13);border-radius:10px;padding:11px}
+.rpanel-list{overflow-y:auto;max-height:420px}
+
+/* EIR */
+.eirwrap{padding:14px 16px}
+.eirdoc{background:rgba(8,18,28,1);border:1px solid rgba(0,210,120,.35);border-radius:10px;overflow:hidden}
+.eirhdr{background:linear-gradient(135deg,rgba(0,210,120,.06),rgba(0,180,240,.04));border-bottom:1px solid rgba(0,210,120,.13);padding:16px 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.eirlogo{font-family:monospace;font-size:22px;font-weight:700;letter-spacing:5px;color:#00d278}
+.eirls{font-family:monospace;font-size:7px;letter-spacing:2px;color:#5a9080;margin-top:2px;text-transform:uppercase}
+.eirtit{font-family:monospace;font-size:11px;font-weight:700;letter-spacing:2px;color:#e2f0eb;text-transform:uppercase;text-align:right}
+.eirid{font-family:monospace;font-size:9px;color:#00d278;margin-top:3px;text-align:right}
+.eirdate{font-family:monospace;font-size:8px;color:#5a9080;margin-top:2px;text-align:right}
+.eirinfo{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid rgba(0,210,120,.1)}
+.eiric{padding:10px 16px;border-right:1px solid rgba(0,210,120,.1)}
+.eiric:last-child{border-right:none}
+.eiril{font-size:7px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#1e4838;margin-bottom:2px}
+.eiriv{font-family:monospace;font-size:10px;color:#e2f0eb;font-weight:700}
+.eirsum{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid rgba(0,210,120,.1)}
+.eirsc{padding:12px 14px;border-right:1px solid rgba(0,210,120,.1);text-align:center}
+.eirsc:last-child{border-right:none}
+.eirsv{font-family:monospace;font-size:22px;font-weight:700;line-height:1;margin-bottom:2px}
+.eirsl{font-size:7px;color:#5a9080;text-transform:uppercase;letter-spacing:1px}
+.eirbody{padding:14px 16px}
+.eirst{font-family:monospace;font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#00d278;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.eirst::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(0,210,120,.3),transparent)}
+.eirtbl{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:9px}
+.eirtbl th{text-align:left;font-size:7px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#1e4838;padding:4px 8px;border-bottom:1px solid rgba(0,210,120,.1);font-family:monospace}
+.eirtbl td{padding:6px 8px;border-bottom:1px solid rgba(0,0,0,.2);vertical-align:top}
+.eirtbl tr:last-child td{border-bottom:none}
+.eirtbl tr:hover td{background:rgba(0,210,120,.025)}
+.eirimg{width:50px;height:36px;object-fit:cover;border-radius:3px;border:1px solid rgba(0,210,120,.13);cursor:pointer}
+.eirft{background:rgba(15,32,48,1);border-top:1px solid rgba(0,210,120,.1);padding:10px 16px;display:flex;align-items:center;justify-content:space-between}
+.eirftt{font-size:7px;color:#1e4838;font-family:monospace}
+.eirftb{font-family:monospace;font-size:7px;letter-spacing:1px;color:#00d278;background:rgba(0,210,120,.08);border:1px solid rgba(0,210,120,.2);padding:2px 7px;border-radius:3px}
+.eiract{display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:5px;font-family:monospace;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;border:none;transition:all .2s}
+.bp{background:linear-gradient(135deg,#00d278,#009855);color:#020e07;box-shadow:0 3px 10px rgba(0,210,120,.25)}
+.bp:hover{transform:translateY(-1px)}
+.bs{background:rgba(15,32,48,1);border:1px solid rgba(0,210,120,.3);color:#00d278}
+.bs:hover{background:rgba(0,210,120,.08)}
+.bo{background:transparent;border:1px solid rgba(0,210,120,.15);color:#5a9080}
+.bo:hover{border-color:rgba(0,210,120,.3);color:#e2f0eb}
+
+/* === CYRA MOBILE + PDF PATCH === */
+
+@media (max-width: 768px) {
+  body {
+    font-size: 12px;
+    overflow-x: hidden;
+  }
+
+  .ah {
+    height: auto;
+    min-height: 54px;
+    flex-wrap: wrap;
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .alogo {
+    font-size: 18px;
+  }
+
+  .cbadge,
+  .ibadge,
+  .aip {
+    font-size: 8px;
+  }
+
+  .hr {
+    width: 100%;
+    margin-left: 0;
+    justify-content: space-between;
+  }
+
+  .abody {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .side {
+    width: 100%;
+    min-width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(0,210,120,.13);
+  }
+
+  .spt {
+    padding: 8px 10px;
+  }
+
+  .zl {
+    display: flex;
+    overflow-x: auto;
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .zi {
+    min-width: 130px;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    padding: 8px;
+    border-radius: 8px;
+    background: rgba(11,24,36,.8);
+  }
+
+  .zi.on {
+    border-left-color: transparent;
+    border-bottom-color: #00d278;
+  }
+
+  .sft,
+  .snew {
+    display: none;
+  }
+
+  .main {
+    width: 100%;
+  }
+
+  .fwrap,
+  .eirwrap {
+    padding: 10px;
+  }
+
+  .fhdr {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .fchip {
+    margin-left: 0;
+  }
+
+  .udz {
+    min-height: 150px;
+  }
+
+  .uimg {
+    max-height: 260px;
+  }
+
+  .aibar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pbtn {
+    width: 100%;
+    padding: 13px 14px;
+    font-size: 11px;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .rcard > div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .eirhdr {
+    flex-direction: column;
+  }
+
+  .eirtit,
+  .eirid,
+  .eirdate {
+    text-align: left;
+  }
+
+  .eirinfo {
+    grid-template-columns: 1fr;
+  }
+
+  .eiric {
+    border-right: none;
+    border-bottom: 1px solid rgba(0,210,120,.1);
+  }
+
+  .eirsum {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .eiract {
+    justify-content: stretch;
+    flex-direction: column;
+  }
+
+  .eiract .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .eirtbl {
+    font-size: 8px;
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  #eirdoc,
+  #eirdoc * {
+    visibility: visible !important;
+  }
+
+  #eirdoc {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
+  }
+
+  .eiract,
+  .ah,
+  .side {
+    display: none !important;
+  }
+}
+
+
+/* === CYRA MOBILE + DIRECT PDF PATCH === */
+
+@media (max-width: 768px) {
+  body {
+    font-size: 12px;
+    overflow-x: hidden;
+  }
+
+  .ah {
+    height: auto;
+    min-height: 54px;
+    flex-wrap: wrap;
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .hr {
+    width: 100%;
+    margin-left: 0;
+    justify-content: space-between;
+  }
+
+  .abody {
+    flex-direction: column;
+  }
+
+  .side {
+    width: 100%;
+    min-width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(0,210,120,.13);
+  }
+
+  .zl {
+    display: flex;
+    overflow-x: auto;
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .zi {
+    min-width: 130px;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    padding: 8px;
+    border-radius: 8px;
+    background: rgba(11,24,36,.8);
+  }
+
+  .zi.on {
+    border-left-color: transparent;
+    border-bottom-color: #00d278;
+  }
+
+  .sft,
+  .snew {
+    display: none;
+  }
+
+  .fwrap,
+  .eirwrap {
+    padding: 10px;
+  }
+
+  .fhdr,
+  .eirhdr {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .stats,
+  .eirsum {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .eirinfo {
+    grid-template-columns: 1fr;
+  }
+
+  .eiract {
+    flex-direction: column;
+  }
+
+  .eiract .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .eirtbl {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .pbtn {
+    width: 100%;
+  }
+}
+
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="sl" class="screen on">
+  <div class="lcard">
+    <span class="logo">CYRA</span>
+    <span class="lsub">External AI Inspection Portal · Demo 2</span>
+    <div class="lline"></div>
+    <div class="lcred">&#128273; inspector@cyra.ai &nbsp;/&nbsp; demo123</div>
+    <input type="text" id="lu" placeholder="Usuario" value="inspector@cyra.ai">
+    <input type="password" id="lp" placeholder="Contraseña" value="demo123">
+    <button class="lbtn" onclick="doLogin()">Iniciar Sesión</button>
+    <button class="ldbtn" onclick="doLogin()">⚡ Acceso Rápido — Demo Mode</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="sa" class="screen">
+  <header class="ah">
+    <div class="alogo">CYRA</div>
+    <div class="hdiv"></div>
+    <div class="cbadge"><span class="ccode" id="hcode">MSKU1234567</span><span class="ctype">40′HC</span></div>
+    <div class="ibadge"><span class="dot" style="background:#00b4f0"></span>EN INSPECCIÓN</div>
+    <span style="font-size:8px;color:#5a9080;font-family:monospace">📍 PAITA · GATE IN</span>
+    <div class="hr">
+      <div class="aip"><span class="dot"></span>CYRA AI</div>
+      <button class="bnew" onclick="newReq()">⊕ NUEVA SOLICITUD</button>
+      <button class="blg" onclick="doLogout()">⏻</button>
+    </div>
+  </header>
+  <div class="abody">
+    <nav class="side">
+      <div class="spt">
+        <div class="spid">Inspección ID</div>
+        <div class="spval" id="spid">—</div>
+        <div class="spb">
+          <div class="spbl"><span>Progreso</span><span id="sppct">0%</span></div>
+          <div class="spbar"><div class="spfill" id="spbar" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="zl" id="zl"></div>
+      <div class="sft">
+        <div class="sfr"><span>Depósito</span><span style="color:#5a9080;font-family:monospace;font-size:7px">DXP-PAITA</span></div>
+        <div class="sfr"><span>ISO</span><span style="color:#5a9080;font-family:monospace;font-size:7px">45G1</span></div>
+      </div>
+      <div class="snew"><button class="bs btn" style="width:100%" onclick="newReq()">⊕ Nueva</button></div>
+    </nav>
+    <main class="main" id="main"></main>
+  </div>
+</div>
+
+<script>
+const FACES=[
+  {id:'right', name:'Lateral Derecho Ext.', icon:'▶', c1:'R'},
+  {id:'front', name:'Frontal Externo',       icon:'▲', c1:'F'},
+  {id:'left',  name:'Lateral Izq. Ext.',    icon:'◀', c1:'L'},
+  {id:'roof',  name:'Techo Externo',         icon:'■', c1:'T'},
+];
+const EXTRA=[
+  {id:'ai',   name:'Estado IA',   icon:'🤖'},
+  {id:'res',  name:'Resultados',  icon:'📊'},
+  {id:'eir',  name:'EIR Final',   icon:'📄'},
+];
+const SL={low:'Baja',medium:'Media',high:'Alta',critical:'Crítica'};
+const SC={low:'sl',medium:'sm',high:'sh',critical:'sc'};
+const SCLR={low:'rgba(0,210,120,.85)',medium:'rgba(0,180,240,.85)',high:'rgba(240,168,0,.9)',critical:'rgba(240,64,64,.9)'};
+
+const ST={
+  inspId:null,images:{},findings:[],faceFindings:{},
+  processed:false,processing:false,score:null,
+  cur:'right',invalidFaces:{},
+};
+
+function key(fid){return fid+'_0';}
+function allLoaded(){return FACES.every(f=>ST.images[key(f.id)]);}
+function loadedCount(){return FACES.filter(f=>ST.images[key(f.id)]).length;}
+function genId(){return 'CYRA-EXT-'+Math.floor(100000+Math.random()*899999);}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+function genCyraCode(fid,bx,by,bw,bh){
+  const face=FACES.find(f=>f.id===fid);
+  const c1=face?face.c1:'?';
+  let c2;
+  if(fid==='roof') c2=bx<0.5?'L':'R';
+  else if(by<0.13) c2='H';
+  else if(by<0.50) c2='T';
+  else if(by<0.88) c2='B';
+  else c2='G';
+  const col=Math.min(10,Math.max(1,Math.ceil((bx||0.5)*10)));
+  const c3=col===10?'0':String(col);
+  const span=Math.round((bw||0.1)*10);
+  let c4='N';
+  if(span>1){const end=Math.min(10,col+span-1);c4=end===10?'0':String(end);}
+  return c1+c2+c3+c4;
+}
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('on');s.style.setProperty('display','none','important');});
+  const t=document.getElementById(id);
+  if(t){t.classList.add('on');t.style.setProperty('display','flex','important');}
+}
+function toast(msg,t='s'){
+  const existing=document.getElementById('toast-el');
+  if(existing) existing.remove();
+  const el=document.createElement('div');
+  el.id='toast-el';
+  const colors={s:'#00d278',w:'#f0a800',e:'#f04040',g:'#00d278'};
+  el.style.cssText=`position:fixed;top:14px;right:14px;z-index:9999;background:rgba(6,16,24,.97);border:1px solid ${colors[t]||colors.s};border-left:3px solid ${colors[t]||colors.s};border-radius:6px;padding:9px 13px;font-size:11px;color:#e2f0eb;font-family:monospace;max-width:280px;pointer-events:none;animation:tI .25s ease;box-shadow:0 4px 20px rgba(0,0,0,.4)`;
+  el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>{if(el.parentNode)el.parentNode.removeChild(el);},3200);
+}
+
+function doLogin(){
+  const u=document.getElementById('lu').value.trim();
+  const p=document.getElementById('lp').value.trim();
+  if(!u||!p){toast('Complete los campos','w');return;}
+  initApp();show('sa');toast('✓ Sesión iniciada · CYRA External Portal','g');
+}
+function doLogout(){
+  if(confirm('¿Cerrar sesión?')){show('sl');}
+}
+function initApp(){
+  ST.inspId=genId();ST.images={};ST.findings=[];ST.faceFindings={};
+  ST.processed=false;ST.processing=false;ST.score=null;
+  ST.cur='right';ST.invalidFaces={};
+  document.getElementById('spid').textContent=ST.inspId;
+  renderSide();renderView('right');
+}
+function newReq(){
+  if(confirm('¿Iniciar nueva solicitud? Se limpiará la sesión actual.')){initApp();toast('⊕ Nueva solicitud · '+ST.inspId,'s');}
+}
+
+function renderSide(){
+  const el=document.getElementById('zl');el.innerHTML='';
+  FACES.forEach(f=>{
+    const loaded=ST.images[key(f.id)];
+    const analyzed=ST.faceFindings[f.id]!==undefined;
+    const inv=ST.invalidFaces[f.id];
+    let pc='zmpend',pl='Pendiente';
+    if(f.id===ST.cur){pc='zmact';pl='Activo';}
+    else if(analyzed){pc='zmdn';pl='Analizado';}
+    else if(inv){pc='zmdn';pl='No válida';}
+    else if(loaded){pc='zmdn';pl='Listo';}
+    const d=document.createElement('div');
+    d.className='zi'+(ST.cur===f.id?' on':'')+(loaded?' dn':'');
+    d.onclick=()=>renderView(f.id);
+    d.innerHTML=`<div class="zic">${f.icon}</div><div><div class="zn">${f.name}</div><span class="zm ${pc}">${pl}</span>${loaded?`<div style="font-size:7px;color:#1e4838;font-family:monospace;margin-top:1px">1/1 img</div>`:''}</div>`;
+    el.appendChild(d);
+  });
+  // divider
+  const dv=document.createElement('div');dv.style.cssText='height:1px;background:rgba(0,210,120,.1);margin:5px 12px';
+  el.appendChild(dv);
+  EXTRA.forEach(v=>{
+    const d=document.createElement('div');
+    d.className='zi'+(ST.cur===v.id?' on':'');
+    d.onclick=()=>renderView(v.id);
+    d.innerHTML=`<div class="zic">${v.icon}</div><div class="zn">${v.name}</div>`;
+    el.appendChild(d);
+  });
+  const loaded=loadedCount(),total=FACES.length;
+  const pct=Math.round(((loaded/total)*.5+(Object.keys(ST.faceFindings).length/total)*.5)*100);
+  document.getElementById('sppct').textContent=pct+'%';
+  document.getElementById('spbar').style.width=pct+'%';
+}
+
+function renderView(vid){
+  ST.cur=vid;renderSide();
+  const main=document.getElementById('main');
+  if(vid==='ai') return renderAI(main);
+  if(vid==='res') return renderResults(main);
+  if(vid==='eir') return renderEIR(main);
+  const face=FACES.find(f=>f.id===vid);
+  if(face) renderFace(main,face);
+}
+
+function renderFace(main,face){
+  const img=ST.images[key(face.id)];
+  const analyzed=ST.faceFindings[face.id]!==undefined;
+  const findings=analyzed?ST.faceFindings[face.id]:[];
+  const inv=ST.invalidFaces[face.id];
+  const chipCls=img?'frdy':'fpend';
+  const chipTxt=analyzed?'✓ ANALIZADO':img?'⚡ LISTO PARA IA':'⏳ SIN IMAGEN';
+
+  // Build bbox overlays
+  const bboxHTML=analyzed&&img?findings.map((f,i)=>{
+    const clr=SCLR[f.severity]||SCLR.medium;
+    const bx=(f.bbox_x||0.1)*100,by=(f.bbox_y||0.1)*100;
+    const bw=(f.bbox_w||0.15)*100,bh=(f.bbox_h||0.2)*100;
+    return `<div class="bbox" onclick="void(0)"
+      style="left:${bx}%;top:${by}%;width:${bw}%;height:${bh}%;border-color:${clr};background:${clr.replace(/[\d.]+\)$/,'0.07)')}">
+      <div class="bbox-lbl" style="color:${clr}">${f.damage_code}</div>
+      <div class="corner tl" style="color:${clr}"></div>
+      <div class="corner tr" style="color:${clr}"></div>
+      <div class="corner bl" style="color:${clr}"></div>
+      <div class="corner br" style="color:${clr}"></div>
+      <div class="bbox-idx" style="color:${clr}">#${i+1}</div>
+    </div>`;
+  }).join(''):'';
+
+  main.innerHTML=`<div class="fwrap">
+    <div class="fhdr">
+      <div>
+        <div class="ftitle">${face.icon} ${face.name}</div>
+        <div class="fsub">MSKU1234567 · 40′HC · 1 cámara · Arco CYRA · Inspección Externa</div>
+      </div>
+      <div class="fchip ${chipCls}"><span class="dot${img?' ' : ''}"></span>${chipTxt}</div>
+    </div>
+
+    <div class="uslot${img?' loaded':''}${analyzed?' analyzed':''}">
+      <div class="ulbl"><div class="dot${img?'':''}" style="background:${img?'#00d278':'#1e4838'}"></div>Cámara Principal — ${face.name}</div>
+      ${!img?`
+      <div class="udz">
+        <input type="file" accept="image/*" onchange="loadImg(event,'${face.id}')">
+        <div class="uic">📷</div>
+        <div class="utit">Cargar imagen</div>
+        <div class="uhint">Simula captura del arco · JPG PNG WEBP</div>
+      </div>`:
+      `<div class="bbox-container">
+        <img class="uimg" src="${img.data}" id="fimg-${face.id}">
+        ${!analyzed?`<div class="grid-overlay"></div><div class="scan-beam"></div><div class="iicl-lbl">IICL GRID · PENDIENTE IA</div>`:''}
+        ${analyzed?`<div style="position:absolute;inset:0;pointer-events:none">${bboxHTML}
+          <div class="iicl-lbl" style="border-color:rgba(0,210,120,.4);color:#00d278">✓ ${findings.length} DAÑO${findings.length!==1?'S':''} DETECTADO${findings.length!==1?'S':''}</div>
+        </div>`:''}
+        ${!analyzed?`<button class="urmv" onclick="removeImg('${face.id}')">✕</button>`:''}
+      </div>
+      ${findings.length>0?`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px">${findings.map((f,i)=>`
+        <span style="background:rgba(240,168,0,.08);border:1px solid rgba(240,168,0,.2);border-radius:20px;padding:2px 8px;font-size:8px;font-family:monospace;color:#f0a800;cursor:pointer" onclick="void(0)">⚠ ${f.damage_code} · ${f.cyra_location||'—'} · ${SL[f.severity]}</span>`).join('')}</div>`:''}`}
+    </div>
+
+    ${inv?`<div class="invv"><span style="font-size:20px;flex-shrink:0">⚠️</span><div><div class="invtit">Imagen no válida — No corresponde a contenedor</div><div class="invsub">${inv.reason}</div><div style="font-size:9px;color:#1e4838;margin-top:4px;font-family:monospace">Carga una imagen de la cara externa del contenedor.</div></div></div>`:''}
+
+    <div class="aibar">
+      <div class="aieng">
+        <span class="dot"></span>
+        <div><div class="aieng-t">CYRA AI Evaluator</div><div class="aieng-s">Inspector IICL Certificado · Backend Seguro</div></div>
+      </div>
+      <div class="aiinfo">${analyzed?`<span style="color:#00d278">✓ Análisis IICL completado · ${findings.length} hallazgo(s) · Overlays visibles en imagen</span>`:'Motor listo · Analizará con criterio inspector IICL certificado'}</div>
+      ${allLoaded()&&!ST.processed?`<div class="pbtnw"><button class="pbtn" onclick="startProcessing()">⚡ PROCESAR INSPECCIÓN IA</button></div>`:''}
+      ${ST.processed&&!analyzed?`<span style="font-size:9px;color:#00d278;font-family:monospace">✓ Procesado · Ver resultados</span>`:''}
+    </div>
+
+    ${allLoaded()&&!ST.processed?`<div class="pbtnw" style="padding:6px 0"><button class="pbtn" onclick="startProcessing()">⚡ PROCESAR TODAS LAS CARAS — IA IICL</button></div>`:''}
+  </div>`;
+}
+
+function loadImg(e,faceId){
+  const f=e.target.files[0];
+  if(!f) return;
+  if(!f.type.startsWith('image/')){toast('Solo imágenes JPG/PNG/WEBP','e');return;}
+  const r=new FileReader();
+  r.onload=ev=>{
+    ST.images[key(faceId)]={data:ev.target.result,name:f.name,type:f.type};
+    renderView(ST.cur);renderSide();
+    toast('📷 Imagen cargada · '+FACES.find(x=>x.id===faceId).name,'g');
+  };
+  r.readAsDataURL(f);
+}
+function removeImg(faceId){
+  delete ST.images[key(faceId)];
+  if(ST.faceFindings[faceId]) delete ST.faceFindings[faceId];
+  delete ST.invalidFaces[faceId];
+  ST.processed=false;
+  renderView(ST.cur);renderSide();
+  toast('Imagen eliminada','w');
+}
+
+// ── PROCESSING ──
+async function startProcessing(){
+  if(!allLoaded()){toast('Carga todas las imágenes primero','w');return;}
+  if(ST.processing) return;
+  ST.processing=true;
+  renderProcView();
+  try{
+    await processAllFaces();
+    ST.processed=true;ST.processing=false;
+    renderView('res');
+    toast('✓ Análisis IICL completado · '+ST.findings.length+' hallazgo(s)','g');
+  }catch(err){
+    console.error(err);
+    ST.processing=false;
+    renderErrView(err.message);
+  }
+}
+
+function renderProcView(){
+  const steps=['Validando imágenes y contenedor','Conectando CYRA AI Evaluator','Analizando lateral derecho externo','Analizando frontal externo','Analizando lateral izquierdo externo','Analizando techo externo','Generando hallazgos IICL estructurados','Compilando reporte EIR'];
+  document.getElementById('main').innerHTML=`<div class="fwrap"><div class="procv">
+    <div class="pring"><div class="pring-i"></div></div>
+    <div class="plbl" id="plbl">ANALIZANDO CON CYRA AI IA</div>
+    <div class="psub">CYRA AI Evaluator · Inspector IICL Certificado · Backend Seguro</div>
+    <div class="pbar"><div class="pfill" id="pfill"></div></div>
+    <div class="psteps">${steps.map((s,i)=>`<div class="ps pend" id="ps${i}"><div class="psd"></div>${s}</div>`).join('')}</div>
+  </div></div>`;
+}
+
+async function animStep(i,pct){
+  if(i>0){const prev=document.getElementById('ps'+(i-1));if(prev)prev.className='ps done';}
+  const el=document.getElementById('ps'+i);if(el)el.className='ps act';
+  const pb=document.getElementById('pfill');if(pb)pb.style.width=pct+'%';
+  await sleep(400+Math.random()*300);
+}
+
+async function processAllFaces(){
+  ST.findings=[];ST.faceFindings={};
+  await animStep(0,10);await animStep(1,18);
+  for(let i=0;i<FACES.length;i++){
+    const face=FACES[i];
+    await animStep(i+2,18+(i+1)*14);
+    const img=ST.images[key(face.id)];
+    if(!img) continue;
+    const res=await callCyraEvaluator(face,img);
+    if(res.invalid){
+      ST.invalidFaces[face.id]={invalid:true,reason:res.reason};
+      ST.faceFindings[face.id]=[];
+    } else {
+      ST.faceFindings[face.id]=res.map((f,j)=>({...f,_idx:ST.findings.length+j,face:face.id,faceName:face.name,photo:img.data}));
+      ST.findings.push(...ST.faceFindings[face.id]);
+    }
+  }
+  await animStep(6,92);await sleep(300);
+  await animStep(7,100);
+  const last=document.getElementById('ps7');if(last)last.className='ps done';
+  const w={low:1,medium:2,high:3,critical:4};
+  const max=ST.findings.length*4||1;
+  ST.score=Math.max(0,Math.round((1-ST.findings.reduce((s,f)=>s+(w[f.severity]||1),0)/max)*100));
+}
+
+async function callCyraEvaluator(face,img){
+  const payload = {
+    inspection_id: ST.inspId,
+    container_id: document.getElementById('hcode')?.textContent || 'MSKU1234567',
+    container_type: '40HC',
+    operation: 'Gate In',
+    depot: 'DXP - Paita, Perú',
+    face_id: face.id,
+    face_name: face.name,
+    image_type: img.type || 'image/jpeg',
+    image_base64: img.data.split(',')[1]
+  };
+
+  const response = await fetch('/api/evaluar-contenedor', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+
+  if(!response.ok){
+    let detail = '';
+    try {
+      const err = await response.json();
+      detail = err.detail || err.error || JSON.stringify(err);
+    } catch(e) {
+      detail = await response.text();
+    }
+    throw new Error(`CYRA AI Evaluator ${response.status}: ${detail}`);
+  }
+
+  const data = await response.json();
+
+  if(data.invalid){
+    return {invalid:true, reason:data.reason || 'La imagen no corresponde a una superficie externa de contenedor.'};
+  }
+
+  const parsed = Array.isArray(data) ? data : (Array.isArray(data.findings) ? data.findings : []);
+  const valid=['BR','BT','BW','CO','CT','CU','DB','DL','DT','DY','FZ','GD','HO','IR','LK','LO','ML','MS','NI','NL','OL','OR','OS','WN','WT','BN','CK','PH','OF'];
+  const severities=['low','medium','high','critical'];
+  const repairs=['Soldadura','Parche estructural','Reemplazo de panel','Enderezado','Tratamiento anticorrosivo','Pintura/retoque','Limpieza','No requiere reparación'];
+
+  return parsed.map(f=>{
+    if(!valid.includes(f.damage_code)) f.damage_code='WT';
+    if(!severities.includes(f.severity)) f.severity='medium';
+    if(!repairs.includes(f.repair_method)) f.repair_method='No requiere reparación';
+    if(!f.cyra_location && f.bbox_x!==undefined) {
+      f.cyra_location=genCyraCode(face.id,f.bbox_x,f.bbox_y,f.bbox_w,f.bbox_h);
+    }
+    if(typeof f.confidence !== 'number') f.confidence=.85;
+    return f;
+  });
+}
+
+function renderErrView(msg){
+  document.getElementById('main').innerHTML=`<div class="fwrap"><div class="errv">
+    <div style="font-size:48px">⚠️</div>
+    <div class="errtit">Error de Conexión con Motor IA</div>
+    <div class="errsub">No se pudo conectar con <strong>CYRA AI Evaluator</strong>.<br>Verifica tu conexión a internet e intenta nuevamente.</div>
+    <div class="errcode">${msg||'Error desconocido'}</div>
+    <button class="errbtn" onclick="startProcessing()">🔄 Reintentar análisis</button>
+  </div></div>`;
+}
+
+// ── AI STATUS ──
+function renderAI(main){
+  main.innerHTML=`<div class="fwrap">
+    <div class="rcard">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:42px;height:42px;border-radius:50%;border:2px solid #00d278;display:flex;align-items:center;justify-content:center;font-size:20px;background:rgba(0,210,120,.08);animation:pu 2s infinite">🤖</div>
+        <div>
+          <div style="font-family:monospace;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#00d278">Inspector IICL — IA Activa</div>
+          <div style="font-size:9px;color:#5a9080;font-family:monospace;margin-top:2px">CYRA AI Evaluator · claude-sonnet-4 (Anthropic) · Siempre activo</div>
+        </div>
+      </div>
+    </div>
+    <div class="rcard">
+      <div class="rtit">Estado por cara</div>
+      ${FACES.map(f=>{
+        const img=ST.images[key(f.id)];
+        const analyzed=ST.faceFindings[f.id]!==undefined;
+        const inv=ST.invalidFaces[f.id];
+        const dc=analyzed?ST.faceFindings[f.id].length:0;
+        return `<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid rgba(0,210,120,.08);cursor:pointer" onclick="renderView('${f.id}')">
+          <span style="font-size:16px">${f.icon}</span>
+          <div style="flex:1"><div style="font-size:10px;font-weight:600;font-family:monospace;color:#e2f0eb">${f.name}</div>
+          <div style="font-size:8px;font-family:monospace;color:${inv?'#f04040':analyzed?'#00d278':'#5a9080'};margin-top:1px">${inv?'⚠ Imagen no válida':analyzed?'✓ Analizado · '+dc+' hallazgo'+(dc!==1?'s':''):img?'Imagen cargada · Pendiente':'Sin imagen'}</div></div>
+          <span style="font-family:monospace;font-size:16px;color:${inv?'#f04040':'#f0a800'}">${inv?'⚠':dc||'—'}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    ${!ST.processed&&allLoaded()?`<div class="pbtnw"><button class="pbtn" onclick="startProcessing()">⚡ PROCESAR INSPECCIÓN IA AHORA</button></div>`:''}
+  </div>`;
+}
+
+// ── RESULTS ──
+function renderResults(main){
+  if(!ST.processed){
+    main.innerHTML=`<div class="fwrap"><div class="rcard" style="text-align:center;padding:36px"><div style="font-size:44px;margin-bottom:12px">🤖</div><div style="font-family:monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#5a9080">Sin resultados aún</div><div style="font-size:10px;color:#1e4838;margin-top:6px">Carga las imágenes y procesa la inspección IA</div></div></div>`;
+    return;
+  }
+  const sevC={low:0,medium:0,high:0,critical:0};
+  ST.findings.forEach(f=>{if(sevC[f.severity]!==undefined)sevC[f.severity]++;});
+  const score=ST.score??85;
+  main.innerHTML=`<div class="fwrap">
+    <div class="rcard">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        <div style="font-family:monospace;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#00d278">📊 Resultados del Análisis IA</div>
+        <div style="display:flex;align-items:center;gap:8px;background:rgba(15,32,48,1);border:1px solid rgba(0,210,120,.2);border-radius:5px;padding:6px 11px">
+          <div><div style="font-family:monospace;font-size:20px;font-weight:700;color:#00d278;line-height:1">${score}</div><div style="font-size:7px;color:#5a9080;text-transform:uppercase;letter-spacing:1px;margin-top:1px">Score IA</div></div>
+          <div style="width:1px;height:28px;background:rgba(0,210,120,.15)"></div>
+          <div style="font-size:8px;color:#5a9080;font-family:monospace"><div>CYRA AI Evaluator</div><div style="margin-top:1px;color:#00d278">${ST.inspId}</div></div>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="sc2"><div class="scv" style="color:#00b4f0">${ST.findings.length}</div><div class="scl">Total Daños</div></div>
+        <div class="sc2"><div class="scv" style="color:#f04040">${sevC.critical}</div><div class="scl">Críticos</div></div>
+        <div class="sc2"><div class="scv" style="color:#f0a800">${sevC.high}</div><div class="scl">Altos</div></div>
+        <div class="sc2"><div class="scv" style="color:#00d278">${sevC.low+sevC.medium}</div><div class="scl">Baja/Media</div></div>
+      </div>
+    </div>
+
+    ${FACES.map(f=>{
+      const ff=ST.faceFindings[f.id]||[];
+      const img=ST.images[key(f.id)];
+      if(!ff.length&&!ST.invalidFaces[f.id]) return '';
+      const inv=ST.invalidFaces[f.id];
+      const bboxHTML=img&&ff.length?ff.map((fd,i)=>{
+        const clr=SCLR[fd.severity]||SCLR.medium;
+        const bx=(fd.bbox_x||0.1)*100,by=(fd.bbox_y||0.1)*100;
+        const bw=(fd.bbox_w||0.15)*100,bh=(fd.bbox_h||0.2)*100;
+        return `<div class="bbox" style="left:${bx}%;top:${by}%;width:${bw}%;height:${bh}%;border-color:${clr};background:${clr.replace(/[\d.]+\)$/,'0.07)')}">
+          <div class="bbox-lbl" style="color:${clr}">${fd.damage_code}</div>
+          <div class="corner tl" style="color:${clr}"></div><div class="corner tr" style="color:${clr}"></div>
+          <div class="corner bl" style="color:${clr}"></div><div class="corner br" style="color:${clr}"></div>
+          <div class="bbox-idx" style="color:${clr}">#${i+1}</div>
+        </div>`;
+      }).join(''):'';
+      return `<div class="rcard">
+        <div style="font-family:monospace;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#00d278;margin-bottom:9px">${f.icon} ${f.name} — ${ff.length} hallazgo${ff.length!==1?'s':''}</div>
+        ${inv?`<div class="invv"><span style="font-size:18px">⚠️</span><div><div class="invtit">Imagen no válida</div><div class="invsub">${inv.reason}</div></div></div>`:
+        `<div style="display:grid;grid-template-columns:1.2fr 1fr;gap:10px">
+          <div>
+            <div class="bbox-container"${img?'':''}>
+              ${img?`<img style="width:100%;border-radius:5px;display:block" src="${img.data}">`:''}
+              <div style="position:absolute;inset:0;pointer-events:none">${bboxHTML}</div>
+            </div>
+          </div>
+          <div>${ff.map((fd,i)=>{
+            const clr=SCLR[fd.severity]||SCLR.medium;
+            return `<div class="fc2">
+              <div class="fc2num" style="color:${clr};border-color:${clr}">${i+1}</div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
+                  <span class="fc2code">${fd.damage_code}</span>
+                  <span class="fc2loc">${fd.cyra_location||'—'}</span>
+                  <span class="sb ${SC[fd.severity]}">${SL[fd.severity]}</span>
+                  <span style="font-family:monospace;font-size:7px;color:#1e4838;margin-left:auto">${Math.round((fd.confidence||.85)*100)}%</span>
+                </div>
+                <div class="fc2desc">${(fd.description||'').substring(0,70)}</div>
+                <div class="fc2sub">📐 ${fd.dimensions_mm||'—'} · 🔧 ${fd.repair_method||'—'}</div>
+              </div>
+            </div>`;
+          }).join('')}</div>
+        </div>`}
+      </div>`;
+    }).join('')}
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn bo" onclick="renderView('right')">← Volver</button>
+      <button class="btn bp" onclick="renderView('eir')">📄 Ver EIR Final →</button>
+    </div>
+  </div>`;
+}
+
+// ── EIR ──
+function renderEIR(main){
+  if(!ST.processed){
+    main.innerHTML=`<div class="fwrap"><div class="rcard" style="text-align:center;padding:36px"><div style="font-size:44px;margin-bottom:12px">📄</div><div style="font-family:monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#5a9080">Procesa la inspección para generar el EIR</div></div></div>`;
+    return;
+  }
+  const now=new Date().toLocaleString('es-PE');
+  const sevC={low:0,medium:0,high:0,critical:0};
+  ST.findings.forEach(f=>{if(sevC[f.severity]!==undefined)sevC[f.severity]++;});
+  const score=ST.score??85;
+  const avgConf=Math.round(ST.findings.reduce((s,f)=>s+(f.confidence||.85),0)/(ST.findings.length||1)*100);
+  const rows=ST.findings.map((f,i)=>`<tr>
+    <td><span style="font-family:monospace;font-size:8px;color:#00b4f0">${f.faceName||f.face}</span></td>
+    <td><span style="font-family:monospace;font-size:10px;font-weight:700;color:#00d278;background:rgba(0,210,120,.08);border:1px solid rgba(0,210,120,.2);padding:1px 5px;border-radius:3px;letter-spacing:1px">${f.cyra_location||'—'}</span></td>
+    <td><span style="font-family:monospace;font-size:9px;color:#f0a800;font-weight:700">${f.damage_code}</span></td>
+    <td style="font-size:8px;max-width:100px">${(f.description||'—').substring(0,45)}</td>
+    <td><span class="sb ${SC[f.severity]}">${SL[f.severity]}</span></td>
+    <td style="font-family:monospace;font-size:8px;color:#5a9080">${f.dimensions_mm||'—'}</td>
+    <td style="font-size:8px">${(f.repair_method||'—').substring(0,18)}</td>
+    <td>${f.photo?`<img class="eirimg" src="${f.photo}" onclick="window.open('${f.photo}')">`:'<div style="width:50px;height:36px;border:1px dashed rgba(0,210,120,.13);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#1e4838">📷</div>'}</td>
+  </tr>`).join('');
+
+  main.innerHTML=`<div class="eirwrap">
+    <div class="eiract">
+      <button class="btn bo" onclick="renderView('res')">← Resultados</button>
+      <button class="btn bs" onclick="newReq()">⊕ Nueva</button>
+    </div>
+    <div class="eirdoc" id="eirdoc">
+      <div class="eirhdr">
+        <div><div class="eirlogo">CYRA</div><div class="eirls">AI Container Inspection · External Portal · Demo 2</div></div>
+        <div><div class="eirtit">Equipment Inspection Report</div>
+          <div class="eirid">${ST.inspId}</div>
+          <div class="eirdate">${now}</div>
+          <div style="margin-top:5px"><span class="sb ${sevC.critical>0?'sc':sevC.high>0?'sh':ST.findings.length>0?'sm':'sl'}">${sevC.critical>0?'⚠ DAÑOS CRÍTICOS':sevC.high>0?'DAÑOS RELEVANTES':ST.findings.length>0?'DAÑOS MENORES':'✓ CONFORME'}</span></div>
+        </div>
+      </div>
+      <div class="eirinfo">
+        ${[['Contenedor','MSKU1234567'],['Tipo','40′ HC'],['Operación','Gate In Inspection'],['Depósito','DXP - Paita, Perú'],['Inspector','CYRA AI System'],['ISO','45G1']].map(([l,v])=>`<div class="eiric"><div class="eiril">${l}</div><div class="eiriv">${v}</div></div>`).join('')}
+      </div>
+      <div class="eirsum">
+        <div class="eirsc"><div class="eirsv" style="color:#00b4f0">${ST.findings.length}</div><div class="eirsl">Total Daños</div></div>
+        <div class="eirsc"><div class="eirsv" style="color:#f04040">${sevC.critical}</div><div class="eirsl">Críticos</div></div>
+        <div class="eirsc"><div class="eirsv" style="color:#f0a800">${sevC.high}</div><div class="eirsl">Altos</div></div>
+        <div class="eirsc"><div class="eirsv" style="color:#00d278">${score}</div><div class="eirsl">Score IA</div></div>
+      </div>
+      <div class="eirbody">
+        <div class="eirst">Resumen por cara</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px">
+          ${FACES.map(f=>{const ff=ST.faceFindings[f.id]||[];const n=ff.length;const inv=ST.invalidFaces[f.id];
+            return `<div style="background:rgba(15,32,48,1);border:1px solid ${n>0?'rgba(240,168,0,.2)':inv?'rgba(240,64,64,.2)':'rgba(0,210,120,.13)'};border-radius:5px;padding:8px 10px;display:flex;align-items:center;gap:7px">
+              <span style="font-size:15px">${f.icon}</span>
+              <div><div style="font-size:9px;font-weight:600;font-family:monospace;color:#e2f0eb">${f.name}</div>
+              <div style="font-size:8px;font-family:monospace;color:${n>0?'#f0a800':inv?'#f04040':'#00d278'};margin-top:1px">${inv?'⚠ No válida':n>0?n+' daño'+(n!==1?'s':''):'Sin daños'}</div></div>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="eirst">Registro de daños — IICL</div>
+        ${ST.findings.length>0?`<div style="overflow-x:auto"><table class="eirtbl">
+          <thead><tr><th>Cara</th><th>Cód. CYRA</th><th>Daño</th><th>Descripción</th><th>Severidad</th><th>Dim. mm</th><th>Reparación</th><th>Foto</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div>`:
+        `<div style="text-align:center;padding:16px;font-family:monospace;font-size:10px;letter-spacing:1px;color:#00d278;text-transform:uppercase">✓ Sin daños detectados — Contenedor conforme</div>`}
+        <div class="eirst" style="margin-top:14px">Evidencia fotográfica</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:6px;margin-bottom:12px">
+          ${ST.findings.filter(f=>f.photo).map((f,i)=>`<div style="position:relative;cursor:pointer" onclick="window.open('${f.photo}')">
+            <img src="${f.photo}" style="width:100%;height:60px;object-fit:cover;border-radius:3px;border:1px solid rgba(0,210,120,.13)">
+            <div style="position:absolute;bottom:2px;left:2px;background:rgba(4,12,20,.88);padding:1px 4px;border-radius:2px;font-family:monospace;font-size:7px;color:#f0a800">${f.damage_code}</div>
+            <div style="position:absolute;top:2px;right:2px;background:rgba(4,12,20,.88);padding:1px 4px;border-radius:2px;font-family:monospace;font-size:7px;color:#5a9080">${f.cyra_location||''}</div>
+          </div>`).join('')}
+        </div>
+        <div style="background:rgba(15,32,48,1);border:1px solid rgba(0,210,120,.1);border-radius:5px;padding:10px 12px;font-size:7px;color:#1e4838;font-family:monospace;line-height:1.8">
+          <span style="color:#00d278">MOTOR:</span> CYRA AI Evaluator (Anthropic) · Inspector IICL &nbsp;|&nbsp;
+          <span style="color:#00d278">CONFIANZA:</span> ${avgConf}% &nbsp;|&nbsp;
+          <span style="color:#00d278">MODO:</span> Análisis real de imagen · Sin simulación
+        </div>
+      </div>
+      <div class="eirft">
+        <div class="eirftt">CYRA · AI Container Inspection · Paita · ${now}</div>
+        <div class="eirftb">EIR GENERADO POR IA REAL</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// init
+document.querySelectorAll('.screen').forEach(s=>{s.style.setProperty('display','none','important');});
+const sl=document.getElementById('sl');
+sl.classList.add('on');sl.style.setProperty('display','flex','important');
+
+
+/* === CYRA DIRECT PDF EXPORT PATCH === */
+
+function loadHtml2Pdf(callback) {
+  if (window.html2pdf) {
+    callback();
+    return;
+  }
+
+  const script = document.createElement("script");
+  script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+  script.onload = callback;
+  script.onerror = function() {
+    alert("No se pudo cargar el generador PDF. Verifica tu conexión a internet.");
+  };
+  document.head.appendChild(script);
+}
+
+function exportEIRPDF() {
+  const eir = document.getElementById("eirdoc");
+
+  if (!eir) {
+    alert("Primero genera o abre el EIR Final.");
+    return;
+  }
+
+  loadHtml2Pdf(function() {
+    const insp = (window.ST && ST.inspId) ? ST.inspId : "CYRA-EIR";
+    const filename = insp + "-EIR.pdf";
+
+    const options = {
+      margin: 8,
+      filename: filename,
+      image: {
+        type: "jpeg",
+        quality: 0.92
+      },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#08121c"
+      },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait"
+      }
+    };
+
+    html2pdf()
+      .set(options)
+      .from(eir)
+      .save();
+  });
+}
+
+function cyraEnhanceEIRButtons() {
+  const actionBar = document.querySelector(".eiract");
+  const eir = document.getElementById("eirdoc");
+
+  if (!actionBar || !eir) return;
+  if (document.getElementById("btnPdfEir")) return;
+
+  const btn = document.createElement("button");
+  btn.id = "btnPdfEir";
+  btn.className = "btn bp";
+  btn.innerHTML = "⬇ Descargar PDF EIR";
+  btn.onclick = exportEIRPDF;
+
+  actionBar.appendChild(btn);
+}
+
+if (typeof renderView === "function" && !window.__cyraPdfPatchApplied) {
+  window.__cyraPdfPatchApplied = true;
+  const CYRA_originalRenderView = renderView;
+
+  renderView = function(vid) {
+    CYRA_originalRenderView(vid);
+    setTimeout(cyraEnhanceEIRButtons, 80);
+  };
+}
+
+document.addEventListener("click", function() {
+  setTimeout(cyraEnhanceEIRButtons, 120);
+});
+
+
+</script>
+</body>
+</html>
