@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Outfit',system-ui,sans-serif;background:#040c14;color:#e2f0eb;font-size:13px;min-height:100vh}
@@ -505,6 +506,282 @@ input:focus{border-color:#00d278}
 
   .pbtn {
     width: 100%;
+  }
+}
+
+
+/* === CYRA RESPONSIVE PATCH === */
+
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+img, video, canvas {
+  max-width: 100%;
+}
+
+@media (max-width: 900px) {
+  body {
+    font-size: 12px;
+  }
+
+  .screen.on {
+    min-height: 100dvh;
+  }
+
+  .ah {
+    height: auto;
+    min-height: 56px;
+    flex-wrap: wrap;
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .alogo {
+    font-size: 18px;
+    letter-spacing: 3px;
+  }
+
+  .hdiv {
+    display: none;
+  }
+
+  .cbadge,
+  .ibadge,
+  .aip {
+    font-size: 8px;
+  }
+
+  .hr {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .abody {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .side {
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(0,210,120,.13);
+  }
+
+  .spt {
+    padding: 8px 10px;
+  }
+
+  .zl {
+    display: flex;
+    overflow-x: auto;
+    gap: 6px;
+    padding: 6px 8px;
+  }
+
+  .zi {
+    min-width: 138px;
+    max-width: 160px;
+    flex: 0 0 auto;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    border-radius: 8px;
+    padding: 8px;
+    background: rgba(11,24,36,.85);
+  }
+
+  .zi.on {
+    border-left-color: transparent;
+    border-bottom-color: #00d278;
+  }
+
+  .zic {
+    width: 24px;
+    height: 24px;
+  }
+
+  .zn {
+    font-size: 8px;
+    line-height: 1.25;
+  }
+
+  .sft,
+  .snew {
+    display: none;
+  }
+
+  .main {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .fwrap,
+  .eirwrap {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .fhdr {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .ftitle {
+    font-size: 13px;
+    line-height: 1.25;
+  }
+
+  .fsub {
+    font-size: 7px;
+    line-height: 1.35;
+  }
+
+  .fchip {
+    margin-left: 0;
+  }
+
+  .uslot {
+    padding: 10px;
+  }
+
+  .udz {
+    min-height: 150px;
+  }
+
+  .uimg {
+    max-height: 260px;
+  }
+
+  .aibar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .aieng,
+  .aiinfo,
+  .pbtnw,
+  .pbtn {
+    width: 100%;
+  }
+
+  .pbtn {
+    padding: 13px 14px;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .rcard > div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .eiract {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .eiract .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .eirhdr {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px;
+  }
+
+  .eirtit,
+  .eirid,
+  .eirdate {
+    text-align: left;
+  }
+
+  .eirinfo {
+    grid-template-columns: 1fr;
+  }
+
+  .eiric {
+    border-right: none;
+    border-bottom: 1px solid rgba(0,210,120,.1);
+  }
+
+  .eirsum {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .eirbody {
+    padding: 10px;
+  }
+
+  .eirtbl {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    font-size: 8px;
+  }
+
+  .eirft {
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo {
+    font-size: 34px;
+    letter-spacing: 7px;
+  }
+
+  .lcard {
+    padding: 28px 20px;
+  }
+
+  .ah {
+    padding: 8px;
+  }
+
+  .ccode {
+    font-size: 10px;
+  }
+
+  .bnew {
+    font-size: 8px;
+    padding: 5px 8px;
+  }
+
+  .zi {
+    min-width: 125px;
+  }
+
+  .ftitle {
+    font-size: 12px;
+  }
+
+  .stats,
+  .eirsum {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .scv,
+  .eirsv {
+    font-size: 18px;
+  }
+
+  .uimg {
+    max-height: 220px;
   }
 }
 
