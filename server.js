@@ -117,6 +117,7 @@ Devuelve únicamente JSON válido. No uses markdown, no expliques fuera del JSON
 Si la imagen es válida:
 {
   "invalid": false,
+  "container_id_detected": "",
   "findings": [
     {
       "damage_code": "DT",
