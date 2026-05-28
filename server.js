@@ -67,7 +67,7 @@ Divide la imagen en una cuadrícula:
   B = panel inferior 50-88%
   G = rail inferior 88-100%
 - Columnas X: 10 columnas iguales de izquierda a derecha. Usa 1-9 y 0 para la décima.
-- Para techo: usa L mitad izquierda y R mitad derecha.
+- Para puerta: usa L mitad izquierda y R mitad derecha.
 - Código CYRA: Char1 según cara R/L/F/T + Char2 ubicación H/T/B/G o L/R + Char3 columna inicial + Char4 N si es único o columna final si abarca varias.
 Ejemplos: RT4N, LB67, FH2N, TL3N.
 
