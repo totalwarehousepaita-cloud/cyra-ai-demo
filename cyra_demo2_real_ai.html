@@ -2263,6 +2263,369 @@ document.addEventListener("click", function() {
   window.cyraSetContainerManual = setContainer;
 })();
 
+
+/* === CYRA FORCE CONTAINER APPLY PATCH === */
+(function(){
+  const STORAGE_KEY = "cyra_container_code_manual";
+
+  function normalizeContainer(code){
+    return String(code || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .trim();
+  }
+
+  function isContainer(code){
+    return /^[A-Z]{4}[0-9]{7}$/.test(normalizeContainer(code));
+  }
+
+  function applyContainerEverywhere(code){
+    const clean = normalizeContainer(code);
+
+    if(!isContainer(clean)){
+      alert("Ingresa un código válido de 11 caracteres. Ejemplo: MSKU0841501");
+      return false;
+    }
+
+    localStorage.setItem(STORAGE_KEY, clean);
+
+    if(window.ST){
+      ST.containerId = clean;
+      ST.container = clean;
+      ST.cid = clean;
+      ST.container_id_detected = clean;
+      ST.idContenedor = clean;
+    }
+
+    // Reemplaza textos visibles típicos
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    let n;
+
+    while((n = walker.nextNode())){
+      const raw = String(n.nodeValue || "");
+      const txt = raw.trim();
+      const normalized = normalizeContainer(txt);
+
+      if(
+        txt === "PENDIENTE" ||
+        txt === "CONTENEDOR_VISIBLE" ||
+        txt === "MSKU1234567" ||
+        txt === "CICU9876547" ||
+        /^[A-Z]{4}[0-9]{7}$/.test(normalized)
+      ){
+        nodes.push(n);
+      }
+    }
+
+    nodes.forEach(n => {
+      n.nodeValue = n.nodeValue.replace(n.nodeValue.trim(), clean);
+    });
+
+    // Actualiza inputs
+    document.querySelectorAll("input").forEach(input => {
+      const ph = String(input.placeholder || "").toUpperCase();
+      const id = String(input.id || "").toUpperCase();
+      if(ph.includes("CONTENEDOR") || id.includes("CONTAINER") || id.includes("CONTENEDOR")){
+        input.value = clean;
+      }
+    });
+
+    // Actualiza posibles badges/cabeceras que contienen PENDIENTE
+    document.querySelectorAll("*").forEach(el => {
+      if(el.children.length) return;
+
+      const txt = String(el.textContent || "").trim();
+      const normalized = normalizeContainer(txt);
+
+      if(
+        txt === "PENDIENTE" ||
+        txt === "CONTENEDOR_VISIBLE" ||
+        txt === "MSKU1234567" ||
+        txt === "CICU9876547" ||
+        /^[A-Z]{4}[0-9]{7}$/.test(normalized)
+      ){
+        el.textContent = clean;
+      }
+    });
+
+    console.log("CYRA contenedor aplicado:", clean);
+    return true;
+  }
+
+  function findInputNearButton(btn){
+    const box = btn.closest("div, section, header, .ah, .side, .main") || document;
+    const inputs = Array.from(box.querySelectorAll("input"));
+
+    let candidate = inputs.find(i => {
+      const ph = String(i.placeholder || "").toUpperCase();
+      const id = String(i.id || "").toUpperCase();
+      return ph.includes("CONTENEDOR") || id.includes("CONTAINER") || id.includes("CONTENEDOR");
+    });
+
+    if(candidate) return candidate;
+
+    return document.querySelector("#cyraHeaderContainerInput") ||
+           document.querySelector("#cyraContainerManualInput") ||
+           document.querySelector("input[placeholder*='CONTENEDOR']") ||
+           document.querySelector("input[placeholder*='contenedor']");
+  }
+
+  function ensureContainerInput(){
+    if(document.getElementById("cyraForceContainerBox")) return;
+
+    const header = document.querySelector(".ah") || document.body;
+
+    const box = document.createElement("div");
+    box.id = "cyraForceContainerBox";
+    box.style.cssText = "display:flex;gap:6px;align-items:center;margin-left:8px;padding:4px 7px;border:1px solid rgba(0,210,120,.25);border-radius:8px;background:rgba(0,210,120,.06);";
+
+    box.innerHTML = `
+      <input id="cyraForceContainerInput" placeholder="CONTENEDOR" maxlength="11" style="width:125px;background:#06121c;border:1px solid rgba(0,210,120,.35);color:#dfffee;border-radius:6px;padding:6px 8px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;outline:none;">
+      <button id="cyraForceContainerBtn" type="button" style="background:#00d278;color:#02150f;border:0;border-radius:6px;padding:7px 9px;font-size:9px;font-weight:900;cursor:pointer;">APLICAR</button>
+    `;
+
+    header.appendChild(box);
+
+    const stored = normalizeContainer(localStorage.getItem(STORAGE_KEY) || "");
+    if(stored && isContainer(stored)){
+      box.querySelector("input").value = stored;
+      setTimeout(() => applyContainerEverywhere(stored), 300);
+    }
+  }
+
+  // Evento global: captura cualquier botón APLICAR de contenedor
+  document.addEventListener("click", function(e){
+    const btn = e.target.closest("button");
+    if(!btn) return;
+
+    const label = String(btn.textContent || "").trim().toUpperCase();
+
+    if(label === "APLICAR" || btn.id === "cyraForceContainerBtn" || btn.id === "cyraHeaderContainerBtn" || btn.id === "cyraContainerManualBtn"){
+      const input = findInputNearButton(btn) || document.getElementById("cyraForceContainerInput");
+
+      if(input){
+        e.preventDefault();
+        e.stopPropagation();
+        applyContainerEverywhere(input.value);
+      }
+    }
+  }, true);
+
+  document.addEventListener("keydown", function(e){
+    if(e.key !== "Enter") return;
+
+    const input = e.target.closest("input");
+    if(!input) return;
+
+    const ph = String(input.placeholder || "").toUpperCase();
+    const id = String(input.id || "").toUpperCase();
+
+    if(ph.includes("CONTENEDOR") || id.includes("CONTAINER") || id.includes("CONTENEDOR")){
+      e.preventDefault();
+      applyContainerEverywhere(input.value);
+    }
+  }, true);
+
+  function run(){
+    ensureContainerInput();
+
+    const stored = normalizeContainer(localStorage.getItem(STORAGE_KEY) || "");
+    if(stored && isContainer(stored)){
+      applyContainerEverywhere(stored);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    run();
+    setTimeout(run, 600);
+    setTimeout(run, 1800);
+  });
+
+  document.addEventListener("click", function(){
+    setTimeout(run, 400);
+  });
+
+  window.cyraApplyContainerEverywhere = applyContainerEverywhere;
+})();
+\n
+/* === CYRA USE CONTAINER_ID_DETECTED PATCH === */
+(function(){
+  const STORAGE_KEY = "cyra_container_code_manual";
+
+  function normalize(code){
+    return String(code || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .trim();
+  }
+
+  function isValid(code){
+    return /^[A-Z]{4}\d{7}$/.test(normalize(code));
+  }
+
+  function deepFindContainer(obj){
+    if(!obj) return "";
+
+    const directKeys = [
+      "container_id_detected",
+      "container_id",
+      "container",
+      "container_code",
+      "id_contenedor",
+      "contenedor"
+    ];
+
+    for(const key of directKeys){
+      if(obj[key] && isValid(obj[key])){
+        return normalize(obj[key]);
+      }
+    }
+
+    try{
+      const raw = JSON.stringify(obj).toUpperCase();
+      const match = raw.match(/\b[A-Z]{4}\s?\d{6}\s?\d\b/);
+      if(match && match[0]){
+        const clean = normalize(match[0]);
+        if(isValid(clean)) return clean;
+      }
+    }catch(e){}
+
+    return "";
+  }
+
+  function replacePendingEverywhere(code){
+    const clean = normalize(code);
+    if(!isValid(clean)) return;
+
+    localStorage.setItem(STORAGE_KEY, clean);
+
+    if(window.ST){
+      ST.containerId = clean;
+      ST.container = clean;
+      ST.cid = clean;
+      ST.container_id_detected = clean;
+      ST.idContenedor = clean;
+    }
+
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    let n;
+
+    while((n = walker.nextNode())){
+      const txt = String(n.nodeValue || "").trim();
+      const normalized = normalize(txt);
+
+      if(
+        txt === "PENDIENTE" ||
+        txt === "CONTENEDOR_VISIBLE" ||
+        txt === "MSKU1234567" ||
+        txt === "CICU9876547" ||
+        /^[A-Z]{4}\d{7}$/.test(normalized)
+      ){
+        nodes.push(n);
+      }
+    }
+
+    nodes.forEach(n => {
+      n.nodeValue = clean;
+    });
+
+    document.querySelectorAll("input").forEach(input => {
+      const ph = String(input.placeholder || "").toUpperCase();
+      const id = String(input.id || "").toUpperCase();
+      if(ph.includes("CONTENEDOR") || id.includes("CONTAINER") || id.includes("CONTENEDOR")){
+        input.value = clean;
+      }
+    });
+
+    console.log("CYRA container_id_detected aplicado en HTML:", clean);
+  }
+
+  function patchFetch(){
+    if(window.__cyraUseContainerDetectedFetchPatch) return;
+    if(typeof window.fetch !== "function") return;
+
+    window.__cyraUseContainerDetectedFetchPatch = true;
+    const originalFetch = window.fetch;
+
+    window.fetch = async function(){
+      const response = await originalFetch.apply(this, arguments);
+
+      try{
+        const clone = response.clone();
+        const data = await clone.json();
+
+        const code = deepFindContainer(data);
+
+        if(code){
+          replacePendingEverywhere(code);
+        }
+      }catch(e){}
+
+      return response;
+    };
+  }
+
+  function patchRender(){
+    if(window.__cyraUseContainerDetectedRenderPatch) return;
+    if(typeof window.renderView !== "function") return;
+
+    window.__cyraUseContainerDetectedRenderPatch = true;
+    const originalRenderView = window.renderView;
+
+    window.renderView = function(){
+      const result = originalRenderView.apply(this, arguments);
+
+      setTimeout(() => {
+        const stored = normalize(localStorage.getItem(STORAGE_KEY) || "");
+        if(isValid(stored)){
+          replacePendingEverywhere(stored);
+        }
+      }, 150);
+
+      return result;
+    };
+  }
+
+  function applyStored(){
+    const stored = normalize(localStorage.getItem(STORAGE_KEY) || "");
+    if(isValid(stored)){
+      replacePendingEverywhere(stored);
+    }
+  }
+
+  function run(){
+    patchFetch();
+    patchRender();
+    applyStored();
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    run();
+    setTimeout(run, 500);
+    setTimeout(run, 1500);
+    setTimeout(run, 3000);
+  });
+
+  document.addEventListener("click", function(){
+    setTimeout(run, 300);
+    setTimeout(run, 1000);
+  });
+
+  const obs = new MutationObserver(function(){
+    applyStored();
+  });
+
+  obs.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    characterData: true
+  });
+
+  window.cyraApplyDetectedContainer = replacePendingEverywhere;
+})();
+
 </script>
 </body>
 </html>
