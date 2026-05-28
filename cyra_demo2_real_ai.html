@@ -2626,6 +2626,28 @@ document.addEventListener("click", function() {
   window.cyraApplyDetectedContainer = replacePendingEverywhere;
 })();
 
-</script>
+
+/* === CYRA LOGIN SAFE CONTAINER PATCH === */
+(function(){
+  function isLoginScreenActive(){
+    const bodyText = document.body ? document.body.innerText.toLowerCase() : "";
+    const hasLogin = bodyText.includes("iniciar") || bodyText.includes("login") || bodyText.includes("usuario") || bodyText.includes("contraseña");
+    const hasInspection = bodyText.includes("inspección id") || bodyText.includes("eir final") || bodyText.includes("procesar inspección");
+    return hasLogin && !hasInspection;
+  }
+
+  function clearContainerOnlyOnLogin(){
+    if(isLoginScreenActive()){
+      localStorage.removeItem("cyra_container_code_manual");
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    clearContainerOnlyOnLogin();
+    setTimeout(clearContainerOnlyOnLogin, 500);
+    setTimeout(clearContainerOnlyOnLogin, 1500);
+  });
+})();
+\n</script>
 </body>
 </html>
