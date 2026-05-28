@@ -954,7 +954,7 @@ const FACES=[
   {id:'right', name:'Lateral Derecho Ext.', icon:'▶', c1:'R'},
   {id:'front', name:'Frontal Externo',       icon:'▲', c1:'F'},
   {id:'left',  name:'Lateral Izq. Ext.',    icon:'◀', c1:'L'},
-  {id:'roof',  name:'Techo Externo',         icon:'■', c1:'T'},
+  {id:'roof',  name:'Puerta',         icon:'■', c1:'T'},
 ];
 const EXTRA=[
   {id:'ai',   name:'Estado IA',   icon:'🤖'},
@@ -1184,7 +1184,7 @@ async function startProcessing(){
 }
 
 function renderProcView(){
-  const steps=['Validando imágenes y contenedor','Conectando CYRA AI Evaluator','Analizando lateral derecho externo','Analizando frontal externo','Analizando lateral izquierdo externo','Analizando techo externo','Generando hallazgos IICL estructurados','Compilando reporte EIR'];
+  const steps=['Validando imágenes y contenedor','Conectando CYRA AI Evaluator','Analizando lateral derecho externo','Analizando frontal externo','Analizando lateral izquierdo externo','Analizando puerta','Generando hallazgos IICL estructurados','Compilando reporte EIR'];
   document.getElementById('main').innerHTML=`<div class="fwrap"><div class="procv">
     <div class="pring"><div class="pring-i"></div></div>
     <div class="plbl" id="plbl">ANALIZANDO CON CYRA AI IA</div>
@@ -2005,6 +2005,67 @@ document.addEventListener("click", function() {
 
   window.cyraSetContainerCode = setContainerCode;
   window.cyraCleanVisibleText = cleanVisibleText;
+})();
+
+
+/* === CYRA CLEAR CONTAINER EACH SESSION PATCH === */
+(function(){
+  function clearContainerMemory(){
+    try {
+      localStorage.removeItem("cyra_container_code_manual");
+      sessionStorage.removeItem("cyra_container_code_manual");
+    } catch(e) {}
+  }
+
+  function resetPendingContainerVisual(){
+    if(!document.body) return;
+
+    // Si hay inputs de contenedor, dejarlos vacíos
+    document.querySelectorAll("input").forEach(input => {
+      const ph = String(input.placeholder || "").toUpperCase();
+      const id = String(input.id || "").toUpperCase();
+      if(ph.includes("CONTENEDOR") || id.includes("CONTAINER") || id.includes("CONTENEDOR")){
+        input.value = "";
+      }
+    });
+
+    // No reemplazamos códigos válidos del EIR ya generado aquí.
+    // Solo evitamos que se recargue uno anterior automáticamente.
+  }
+
+  function patchNewRequestButtons(){
+    document.addEventListener("click", function(e){
+      const btn = e.target.closest("button, .btn, .bnew, .snew");
+      if(!btn) return;
+
+      const label = String(btn.textContent || "").toUpperCase();
+
+      if(label.includes("NUEVA") || label.includes("NUEVA SOLICITUD")){
+        clearContainerMemory();
+
+        if(window.ST){
+          ST.containerId = "";
+          ST.container = "";
+          ST.cid = "";
+          ST.container_id_detected = "";
+          ST.idContenedor = "";
+        }
+
+        setTimeout(resetPendingContainerVisual, 200);
+        setTimeout(resetPendingContainerVisual, 800);
+      }
+    }, true);
+  }
+
+  clearContainerMemory();
+
+  document.addEventListener("DOMContentLoaded", function(){
+    clearContainerMemory();
+    resetPendingContainerVisual();
+    patchNewRequestButtons();
+  });
+
+  window.cyraClearContainerMemory = clearContainerMemory;
 })();
 
 </script>
