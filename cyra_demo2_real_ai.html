@@ -896,6 +896,56 @@ img, video, canvas {
   }
 }
 
+
+/* === CYRA HEADER CONTAINER INPUT PATCH === */
+.cyra-header-container-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  padding: 4px 7px;
+  border: 1px solid rgba(0,210,120,.25);
+  border-radius: 8px;
+  background: rgba(0,210,120,.06);
+}
+
+.cyra-header-container-box input {
+  width: 118px;
+  background: rgba(2,10,18,.9);
+  border: 1px solid rgba(0,210,120,.28);
+  color: #dfffee;
+  border-radius: 6px;
+  padding: 5px 7px;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  outline: none;
+  letter-spacing: 1px;
+}
+
+.cyra-header-container-box button {
+  background: #00d278;
+  color: #02150f;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 9px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .cyra-header-container-box {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .cyra-header-container-box input {
+    flex: 1;
+    width: auto;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -2005,6 +2055,212 @@ document.addEventListener("click", function() {
 
   window.cyraSetContainerCode = setContainerCode;
   window.cyraCleanVisibleText = cleanVisibleText;
+})();
+
+
+/* === CYRA HEADER CONTAINER INPUT PATCH === */
+(function(){
+  const STORAGE_KEY = "cyra_container_code_manual";
+
+  function normalize(code){
+    return String(code || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .trim();
+  }
+
+  function isValidContainer(code){
+    return /^[A-Z]{4}\d{7}$/.test(normalize(code));
+  }
+
+  function getStoredContainer(){
+    return normalize(localStorage.getItem(STORAGE_KEY) || "");
+  }
+
+  function replaceContainerText(code){
+    if(!code) return;
+
+    if(window.ST){
+      ST.containerId = code;
+      ST.container = code;
+      ST.cid = code;
+      ST.container_id_detected = code;
+    }
+
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    let n;
+
+    while((n = walker.nextNode())){
+      const txt = normalize(n.nodeValue);
+
+      if(
+        txt === "PENDIENTE" ||
+        txt === "CONTENEDORVISIBLE" ||
+        txt === "CONTENEDOR_VISIBLE" ||
+        txt === "MSKU1234567" ||
+        txt === "CICU9876547"
+      ){
+        nodes.push(n);
+      }
+    }
+
+    nodes.forEach(n => {
+      n.nodeValue = code;
+    });
+
+    const input = document.getElementById("cyraHeaderContainerInput");
+    if(input && input.value !== code){
+      input.value = code;
+    }
+  }
+
+  function setContainer(code){
+    const clean = normalize(code);
+
+    if(!isValidContainer(clean)){
+      alert("Ingresa un código válido de 11 caracteres. Ejemplo: MSKU0841501");
+      return;
+    }
+
+    localStorage.setItem(STORAGE_KEY, clean);
+    replaceContainerText(clean);
+  }
+
+  function findContainerInText(text){
+    const matches = String(text || "").match(/\b[A-Z]{4}\s?\d{6}\s?\d\b/g);
+    if(!matches || !matches.length) return "";
+
+    const cleaned = matches
+      .map(normalize)
+      .filter(isValidContainer)
+      .filter(x => !["MSKU1234567", "CICU9876547"].includes(x));
+
+    return cleaned[0] || "";
+  }
+
+  function findContainerInObject(obj){
+    if(!obj) return "";
+
+    try{
+      const raw = JSON.stringify(obj);
+      return findContainerInText(raw);
+    }catch(e){
+      return "";
+    }
+  }
+
+  function injectHeaderInput(){
+    if(document.getElementById("cyraHeaderContainerBox")) return;
+
+    const header = document.querySelector(".ah") || document.querySelector("header") || document.body;
+    if(!header) return;
+
+    const box = document.createElement("div");
+    box.id = "cyraHeaderContainerBox";
+    box.className = "cyra-header-container-box";
+    box.innerHTML = `
+      <input id="cyraHeaderContainerInput" placeholder="CONTENEDOR" maxlength="11">
+      <button id="cyraHeaderContainerBtn" type="button">APLICAR</button>
+    `;
+
+    header.appendChild(box);
+
+    const input = box.querySelector("#cyraHeaderContainerInput");
+    const btn = box.querySelector("#cyraHeaderContainerBtn");
+
+    const stored = getStoredContainer();
+    if(stored){
+      input.value = stored;
+      replaceContainerText(stored);
+    }
+
+    btn.addEventListener("click", function(){
+      setContainer(input.value);
+    });
+
+    input.addEventListener("keydown", function(e){
+      if(e.key === "Enter"){
+        btn.click();
+      }
+    });
+  }
+
+  function patchFetch(){
+    if(window.__cyraContainerFetchPatch) return;
+    if(typeof window.fetch !== "function") return;
+
+    window.__cyraContainerFetchPatch = true;
+
+    const originalFetch = window.fetch;
+
+    window.fetch = async function(){
+      const response = await originalFetch.apply(this, arguments);
+
+      try{
+        const clone = response.clone();
+        const data = await clone.json();
+
+        const direct =
+          normalize(data.container_id_detected) ||
+          normalize(data.container_id) ||
+          normalize(data.contenedor) ||
+          findContainerInObject(data);
+
+        if(isValidContainer(direct)){
+          localStorage.setItem(STORAGE_KEY, direct);
+          replaceContainerText(direct);
+        }
+      }catch(e){}
+
+      return response;
+    };
+  }
+
+  function scanVisible(){
+    const stored = getStoredContainer();
+
+    if(stored && isValidContainer(stored)){
+      replaceContainerText(stored);
+      return;
+    }
+
+    const code = findContainerInText(document.body ? document.body.innerText : "");
+    if(code){
+      localStorage.setItem(STORAGE_KEY, code);
+      replaceContainerText(code);
+    }
+  }
+
+  function run(){
+    injectHeaderInput();
+    patchFetch();
+    scanVisible();
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    run();
+    setTimeout(run, 500);
+    setTimeout(run, 1500);
+    setTimeout(run, 3000);
+  });
+
+  document.addEventListener("click", function(){
+    setTimeout(run, 300);
+    setTimeout(run, 1000);
+  });
+
+  const obs = new MutationObserver(function(){
+    run();
+  });
+
+  obs.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    characterData: true
+  });
+
+  window.cyraSetContainerManual = setContainer;
 })();
 
 </script>
