@@ -785,6 +785,88 @@ img, video, canvas {
   }
 }
 
+
+/* === CYRA FINAL UX PATCH === */
+.cyra-upload-tools{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+.cyra-mini-btn{
+  border:1px solid rgba(0,210,120,.35);
+  background:rgba(0,210,120,.08);
+  color:#9fffd0;
+  padding:8px 12px;
+  border-radius:10px;
+  cursor:pointer;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.6px;
+}
+.cyra-mini-btn:hover{
+  background:rgba(0,210,120,.16);
+}
+.cyra-hidden-camera{
+  display:none !important;
+}
+.cyra-img-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(1,6,12,.88);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:99999;
+  padding:18px;
+}
+.cyra-img-modal.on{
+  display:flex;
+}
+.cyra-img-modal-box{
+  position:relative;
+  max-width:96vw;
+  max-height:92vh;
+}
+.cyra-img-modal img{
+  max-width:96vw;
+  max-height:92vh;
+  border-radius:14px;
+  box-shadow:0 0 0 1px rgba(0,210,120,.22), 0 20px 60px rgba(0,0,0,.45);
+  background:#08131d;
+}
+.cyra-img-close{
+  position:absolute;
+  top:-12px;
+  right:-12px;
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  border:none;
+  cursor:pointer;
+  background:#00d278;
+  color:#06211a;
+  font-weight:900;
+  font-size:18px;
+}
+.cyra-eir-click-hint{
+  font-size:10px;
+  color:#7adfb0;
+  margin-top:6px;
+  opacity:.9;
+}
+@media (max-width:900px){
+  .cyra-upload-tools{
+    width:100%;
+  }
+  .cyra-mini-btn{
+    flex:1 1 auto;
+    text-align:center;
+    font-size:10px;
+    padding:10px 10px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1464,6 +1546,309 @@ document.addEventListener("click", function() {
   setTimeout(cyraEnhanceEIRButtons, 120);
 });
 
+
+
+/* === CYRA FINAL UX PATCH === */
+(function(){
+
+  function cyraEstimateBase64Bytes(dataUrl){
+    if(!dataUrl || typeof dataUrl!=="string") return 0;
+    const base64 = dataUrl.split(",")[1] || "";
+    return Math.round((base64.length*3)/4);
+  }
+
+  function cyraSanitizeText(txt){
+    if(!txt) return txt;
+    return String(txt)
+      .replace(/anthropic/gi, "CYRA AI")
+      .replace(/claude/gi, "CYRA AI")
+      .replace(/ia real/gi, "CYRA AI")
+      .replace(/real ai/gi, "CYRA AI")
+      .replace(/simulaci[oó]n/gi, "operación")
+      .replace(/simulada/gi, "operativa")
+      .replace(/simulado/gi, "operativo")
+      .replace(/ia evaluator/gi, "CYRA AI")
+      .replace(/real evaluator/gi, "CYRA AI");
+  }
+
+  function cyraReplaceBranding(root=document.body){
+    if(!root) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    let node;
+    while((node = walker.nextNode())){
+      const value = node.nodeValue;
+      if(!value || !value.trim()) continue;
+      const replaced = cyraSanitizeText(value);
+      if(replaced !== value){
+        node.nodeValue = replaced;
+      }
+    }
+  }
+
+  function cyraHideTechErrors(){
+    document.querySelectorAll("*").forEach(el=>{
+      const txt = (el.textContent || "").trim();
+
+      if(/CYRA AI Evaluator\s*500:/i.test(txt) || /request_id/i.test(txt) || /invalid_request_error/i.test(txt)){
+        el.textContent = "CYRA AI no pudo procesar la solicitud en este momento. Revisa el tamaño de la imagen o vuelve a intentarlo.";
+      }
+
+      if(/image exceeds 5 MB maximum/i.test(txt)){
+        el.textContent = "La foto cargada es demasiado pesada para el análisis directo. CYRA AI intentará adaptarla automáticamente. Si vuelve a ocurrir, intenta nuevamente.";
+      }
+
+      if(/terminated/i.test(txt) && /401|500|400/.test(txt)){
+        el.textContent = "CYRA AI no pudo completar el análisis en este momento.";
+      }
+    });
+  }
+
+  function cyraCreateModal(){
+    if(document.getElementById("cyra-img-modal")) return;
+
+    const modal = document.createElement("div");
+    modal.id = "cyra-img-modal";
+    modal.className = "cyra-img-modal";
+    modal.innerHTML = `
+      <div class="cyra-img-modal-box">
+        <button class="cyra-img-close" type="button">×</button>
+        <img src="" alt="CYRA preview" />
+      </div>
+    `;
+
+    modal.addEventListener("click", (e)=>{
+      if(e.target === modal || e.target.classList.contains("cyra-img-close")){
+        modal.classList.remove("on");
+      }
+    });
+
+    document.body.appendChild(modal);
+  }
+
+  function cyraEnableImageZoom(){
+    cyraCreateModal();
+
+    document.addEventListener("click", function(e){
+      const img = e.target.closest("img");
+      if(!img) return;
+
+      const src = img.currentSrc || img.src;
+      if(!src) return;
+
+      const textAround = (img.closest(".eirwrap, .eirbody, .main, .screen, .rcard, .fc2")?.textContent || "") + " " + (img.alt || "");
+      if(!src.startsWith("data:image") && !/blob:|http|https/.test(src)) return;
+
+      const modal = document.getElementById("cyra-img-modal");
+      const modalImg = modal.querySelector("img");
+      modalImg.src = src;
+      modal.classList.add("on");
+    }, true);
+  }
+
+  function cyraSetInputFiles(targetInput, fileList){
+    try{
+      const dt = new DataTransfer();
+      [...fileList].forEach(f=>dt.items.add(f));
+      targetInput.files = dt.files;
+      targetInput.dispatchEvent(new Event("change", { bubbles:true }));
+    }catch(err){
+      console.warn("No se pudo reenviar archivos al input original", err);
+    }
+  }
+
+  function cyraEnhanceFileInputs(){
+    const inputs = [...document.querySelectorAll('input[type="file"]')];
+
+    inputs.forEach((input, idx)=>{
+      input.setAttribute("accept", "image/*");
+
+      if(input.dataset.cyraEnhanced === "1") return;
+      input.dataset.cyraEnhanced = "1";
+
+      const wrap = document.createElement("div");
+      wrap.className = "cyra-upload-tools";
+
+      const btnCam = document.createElement("button");
+      btnCam.type = "button";
+      btnCam.className = "cyra-mini-btn";
+      btnCam.textContent = "📷 TOMAR FOTO";
+
+      const btnGal = document.createElement("button");
+      btnGal.type = "button";
+      btnGal.className = "cyra-mini-btn";
+      btnGal.textContent = "🖼 SUBIR FOTO";
+
+      const hint = document.createElement("div");
+      hint.className = "cyra-eir-click-hint";
+      hint.textContent = "En celular puedes tomar la foto al momento o subirla desde tu galería.";
+
+      const camInput = document.createElement("input");
+      camInput.type = "file";
+      camInput.accept = "image/*";
+      camInput.setAttribute("capture", "environment");
+      camInput.className = "cyra-hidden-camera";
+
+      btnCam.addEventListener("click", ()=> camInput.click());
+      btnGal.addEventListener("click", ()=> input.click());
+
+      camInput.addEventListener("change", ()=>{
+        if(camInput.files && camInput.files.length){
+          cyraSetInputFiles(input, camInput.files);
+        }
+      });
+
+      wrap.appendChild(btnCam);
+      wrap.appendChild(btnGal);
+      wrap.appendChild(camInput);
+
+      const parent = input.parentElement;
+      if(parent){
+        parent.appendChild(wrap);
+        parent.appendChild(hint);
+      }
+    });
+  }
+
+  function cyraLoadImageFromFile(file){
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = function(ev){
+        const image = new Image();
+        image.onload = ()=> resolve({ image, dataUrl: ev.target.result });
+        image.onerror = reject;
+        image.src = ev.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function cyraOptimizeImageForAI(file){
+    // Mantener la mayor calidad posible bajo el límite real de la API
+    const MAX_BYTES = 4.75 * 1024 * 1024;
+    const WIDTH_STEPS = [3200, 2800, 2400, 2200, 2000, 1800, 1600, 1400];
+    const QUALITY_STEPS = [0.94, 0.90, 0.86, 0.82, 0.78, 0.74, 0.70];
+
+    const loaded = await cyraLoadImageFromFile(file);
+    const image = loaded.image;
+
+    let originalWidth = image.width;
+    let originalHeight = image.height;
+
+    // Si ya está ligera, conservarla tal cual
+    if(file.size <= MAX_BYTES){
+      return {
+        data: loaded.dataUrl,
+        type: file.type || "image/jpeg",
+        size: file.size,
+        optimized: false
+      };
+    }
+
+    for(const maxWidth of WIDTH_STEPS){
+      let width = originalWidth;
+      let height = originalHeight;
+
+      if(width > maxWidth){
+        height = Math.round((height * maxWidth)/width);
+        width = maxWidth;
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d", { alpha:false });
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0,0,width,height);
+      ctx.drawImage(image, 0, 0, width, height);
+
+      for(const quality of QUALITY_STEPS){
+        const out = canvas.toDataURL("image/jpeg", quality);
+        const bytes = cyraEstimateBase64Bytes(out);
+
+        if(bytes <= MAX_BYTES){
+          return {
+            data: out,
+            type: "image/jpeg",
+            size: bytes,
+            optimized: true
+          };
+        }
+      }
+    }
+
+    throw new Error("No se pudo preparar la imagen para el análisis.");
+  }
+
+  async function cyraPrepareAllImagesBeforeAI(){
+    if(!window.ST || !ST.faces) return;
+
+    for(const face of ST.faces){
+      if(!face.imgs) continue;
+
+      for(const img of face.imgs){
+        if(!img || img.__cyraPrepared) continue;
+
+        try{
+          if(img.file){
+            const prepared = await cyraOptimizeImageForAI(img.file);
+            img.data = prepared.data;
+            img.type = prepared.type;
+            img.size = prepared.size;
+            img.__cyraPrepared = true;
+          }else if(img.data){
+            img.__cyraPrepared = true;
+          }
+        }catch(err){
+          console.error("CYRA image preparation error:", err);
+          alert("CYRA AI no pudo preparar una imagen para el análisis. Intenta con otra foto o vuelve a cargarla.");
+          throw err;
+        }
+      }
+    }
+  }
+
+  function cyraPatchProcessAllFaces(){
+    if(typeof processAllFaces !== "function" || window.__cyraProcessPatched) return;
+    window.__cyraProcessPatched = true;
+
+    const original = processAllFaces;
+    processAllFaces = async function(){
+      await cyraPrepareAllImagesBeforeAI();
+      return await original.apply(this, arguments);
+    };
+  }
+
+  function cyraPatchLabels(){
+    document.querySelectorAll("button, .btn, .pill, .badge, .chip, .aieng, .top, .hdr, .hbtn").forEach(el=>{
+      if(!el.textContent) return;
+      el.textContent = cyraSanitizeText(el.textContent);
+    });
+  }
+
+  function cyraRun(){
+    cyraReplaceBranding(document.body);
+    cyraHideTechErrors();
+    cyraEnhanceFileInputs();
+    cyraEnableImageZoom();
+    cyraPatchProcessAllFaces();
+    cyraPatchLabels();
+  }
+
+  document.addEventListener("DOMContentLoaded", ()=>{
+    cyraRun();
+    setTimeout(cyraRun, 400);
+    setTimeout(cyraRun, 1500);
+  });
+
+  const mo = new MutationObserver(()=>{
+    cyraRun();
+  });
+  mo.observe(document.documentElement, { childList:true, subtree:true });
+
+  window.cyraRunFinalPatch = cyraRun;
+})();
 
 </script>
 </body>
