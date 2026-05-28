@@ -132,7 +132,8 @@ Si la imagen es válida:
       "dimensions_mm": "largo x ancho estimado",
       "repair_method": "método permitido",
       "observations": "notas técnicas",
-      "confidence": 0.90
+      "confidence": 0.90,
+      "container_id_detected": "CONTENEDOR_VISIBLE"
     }
   ]
 }
