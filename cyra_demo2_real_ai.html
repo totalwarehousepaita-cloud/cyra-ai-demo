@@ -1715,6 +1715,56 @@ document.addEventListener("click", function() {
   window.cyraSetContainer = setContainer;
 })();
 
+
+/* === CYRA REMOVE DUPLICATE EIR GALLERY PATCH === */
+(function(){
+  function removeDuplicateEirGallery(){
+    const titles = Array.from(document.querySelectorAll(".eirst"));
+
+    titles.forEach(title => {
+      const txt = String(title.textContent || "").trim().toLowerCase();
+
+      if(txt.includes("evidencia fotográfica") || txt.includes("evidencia fotografica")){
+        let next = title.nextElementSibling;
+
+        // Elimina la grilla de miniaturas que viene debajo del título
+        if(next){
+          next.remove();
+        }
+
+        // Elimina el título "Evidencia fotográfica"
+        title.remove();
+      }
+    });
+  }
+
+  if(typeof window.renderView === "function" && !window.__cyraRemoveGalleryPatch){
+    window.__cyraRemoveGalleryPatch = true;
+
+    const originalRenderView = window.renderView;
+
+    window.renderView = function(vid){
+      const result = originalRenderView.apply(this, arguments);
+
+      if(vid === "eir"){
+        setTimeout(removeDuplicateEirGallery, 80);
+        setTimeout(removeDuplicateEirGallery, 300);
+      }
+
+      return result;
+    };
+  }
+
+  document.addEventListener("click", function(e){
+    const label = String(e.target?.textContent || "").toLowerCase();
+
+    if(label.includes("eir")){
+      setTimeout(removeDuplicateEirGallery, 120);
+      setTimeout(removeDuplicateEirGallery, 400);
+    }
+  });
+})();
+
 </script>
 </body>
 </html>
