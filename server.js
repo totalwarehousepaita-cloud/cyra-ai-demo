@@ -240,6 +240,22 @@ app.post("/api/evaluar-contenedor", async (req, res) => {
 // - No inventes códigos.
 // - No uses códigos predeterminados.
 // 
+    // 
+// REGLA CRÍTICA PARA VISTA PUERTA:
+// - Si la vista/cara analizada es "Puerta", todos los códigos de ubicación y componente deben corresponder a puerta.
+// - No uses códigos asociados a techo, frontal, top rail, front panel o roof cuando la cara sea Puerta.
+// - Para daños en puerta, prioriza componentes/códigos de puerta como:
+//   DP = Door Panel / panel de puerta
+//   DR = Door / puerta
+//   DH = Door Header / cabezal superior de puerta
+//   DB = Door Bar / barra de cierre, si aplica
+//   DG = Door Gasket / empaque o sello de puerta, si aplica
+//   DL = Door Locking / cierre o seguro de puerta, si aplica
+// - Si el daño está en panel de puerta, usa ubicación/componente de puerta, no FT.
+// - Si no estás seguro del componente exacto de puerta, usa el componente de puerta más cercano y explica la incertidumbre en la descripción.
+// - Para la cara Puerta, el campo "faceName" debe ser "Puerta".
+// - Para la cara Puerta, el campo "cyra_location" no debe iniciar con FT, TR, RF, TC ni códigos de techo/frontal.
+// 
     const message = await anthropic.messages.create({
       model: MODEL,
       max_tokens: 3000,
