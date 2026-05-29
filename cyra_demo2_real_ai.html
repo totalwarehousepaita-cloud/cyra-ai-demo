@@ -895,7 +895,7 @@ const SCLR={low:'rgba(0,210,120,.85)',medium:'rgba(0,180,240,.85)',high:'rgba(24
 
 const ST={
   inspId:null,images:{},findings:[],faceFindings:{},
-  processed:false,processing:false,score:null,
+  processed:false,processing:false,score:null,containerId:'',
   cur:'right',invalidFaces:{},
 };
 
@@ -1365,7 +1365,7 @@ function renderEIR(main){
         </div>
       </div>
       <div class="eirinfo">
-        ${[['Contenedor','PENDIENTE'],['Tipo','40′ HC'],['Operación','Gate In Inspection'],['Depósito','DXP - Paita, Perú'],['Inspector','CYRA AI System'],['ISO','45G1']].map(([l,v])=>`<div class="eiric"><div class="eiril">${l}</div><div class="eiriv">${v}</div></div>`).join('')}
+        ${[['Contenedor',ST.containerId||'PENDIENTE'],['Tipo','40′ HC'],['Operación','Gate In Inspection'],['Depósito','DXP - Paita, Perú'],['Inspector','CYRA AI System'],['ISO','45G1']].map(([l,v])=>`<div class="eiric"><div class="eiril">${l}</div><div class="eiriv">${v}</div></div>`).join('')}
       </div>
       <div class="eirsum">
         <div class="eirsc"><div class="eirsv" style="color:#00b4f0">${ST.findings.length}</div><div class="eirsl">Total Daños</div></div>
@@ -1600,6 +1600,120 @@ document.addEventListener("click", function() {
   }, true);
 })();
 
+
+
+/* === CYRA SAFE CONTAINER ID PATCH === */
+(function(){
+  function normalizeContainer(code){
+    return String(code || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .trim();
+  }
+
+  function isValidContainer(code){
+    return /^[A-Z]{4}\d{7}$/.test(normalizeContainer(code));
+  }
+
+  function setContainer(code){
+    const clean = normalizeContainer(code);
+
+    if(!isValidContainer(clean)){
+      alert("Ingresa un código válido de 11 caracteres. Ejemplo: MSKU0841501");
+      return false;
+    }
+
+    if(window.ST){
+      ST.containerId = clean;
+      ST.container = clean;
+      ST.cid = clean;
+      ST.container_id_detected = clean;
+    }
+
+    document.querySelectorAll("input").forEach(input => {
+      const ph = String(input.placeholder || "").toUpperCase();
+      const id = String(input.id || "").toUpperCase();
+      if(ph.includes("CONTENEDOR") || id.includes("CONTAINER") || id.includes("CONTENEDOR")){
+        input.value = clean;
+      }
+    });
+
+    console.log("CYRA contenedor aplicado:", clean);
+    return true;
+  }
+
+  function findContainerInputFromButton(btn){
+    const box = btn.closest("div, section, aside, header") || document;
+    const inputs = Array.from(box.querySelectorAll("input"));
+
+    return inputs.find(input => {
+      const ph = String(input.placeholder || "").toUpperCase();
+      const id = String(input.id || "").toUpperCase();
+      return ph.includes("CONTENEDOR") || id.includes("CONTAINER") || id.includes("CONTENEDOR");
+    }) || document.querySelector("input[placeholder*='MSI'], input[placeholder*='CONTENEDOR'], input[placeholder*='contenedor']");
+  }
+
+  document.addEventListener("click", function(e){
+    const btn = e.target.closest("button");
+    if(!btn) return;
+
+    const label = String(btn.textContent || "").trim().toUpperCase();
+    const nearby = String((btn.closest("div, section, aside") || btn).textContent || "").toUpperCase();
+
+    if(label.includes("APLICAR") && nearby.includes("CONTENEDOR")){
+      e.preventDefault();
+      e.stopPropagation();
+
+      const input = findContainerInputFromButton(btn);
+
+      if(input){
+        setContainer(input.value);
+      }
+    }
+  }, true);
+
+  if(typeof window.fetch === "function" && !window.__cyraContainerFetchSafe){
+    window.__cyraContainerFetchSafe = true;
+    const originalFetch = window.fetch;
+
+    window.fetch = async function(){
+      const response = await originalFetch.apply(this, arguments);
+
+      try{
+        const clone = response.clone();
+        const data = await clone.json();
+        const code = normalizeContainer(data.container_id_detected || data.container_id || data.contenedor || "");
+
+        if(isValidContainer(code) && window.ST){
+          ST.containerId = code;
+          ST.container = code;
+          ST.cid = code;
+          ST.container_id_detected = code;
+          console.log("CYRA contenedor detectado por IA:", code);
+        }
+      }catch(e){}
+
+      return response;
+    };
+  }
+
+  if(typeof window.newReq === "function" && !window.__cyraNewReqContainerSafe){
+    window.__cyraNewReqContainerSafe = true;
+    const originalNewReq = window.newReq;
+
+    window.newReq = function(){
+      if(window.ST){
+        ST.containerId = "";
+        ST.container = "";
+        ST.cid = "";
+        ST.container_id_detected = "";
+      }
+      return originalNewReq.apply(this, arguments);
+    };
+  }
+
+  window.cyraSetContainer = setContainer;
+})();
 
 </script>
 </body>

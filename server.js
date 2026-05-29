@@ -230,6 +230,16 @@ app.post("/api/evaluar-contenedor", async (req, res) => {
       });
     }
 
+    // 
+// REGLA CYRA PARA CÓDIGO DE CONTENEDOR:
+// - Intenta leer el código ISO 6346 visible en la imagen.
+// - El formato es 4 letras + 7 números. Ejemplo: MSKU0841501.
+// - Puede estar vertical u horizontal.
+// - Si lo lees, devuelve "container_id_detected" a nivel principal.
+// - Si no lo lees, devuelve "container_id_detected": "".
+// - No inventes códigos.
+// - No uses códigos predeterminados.
+// 
     const message = await anthropic.messages.create({
       model: MODEL,
       max_tokens: 3000,
@@ -257,6 +267,22 @@ app.post("/api/evaluar-contenedor", async (req, res) => {
     const text = extractText(message.content);
     const parsed = parseJsonLoose(text);
 
+    // CYRA_CONTAINER_ID_FINAL_SAFE
+    function cyraNormalizeContainerId(value) {
+      const clean = String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").trim();
+      return /^[A-Z]{4}\d{7}$/.test(clean) ? clean : "";
+    }
+
+    const cyraCodeFromTextMatch = String(text || "").toUpperCase().match(/\b[A-Z]{4}\s?\d{6}\s?\d\b/);
+    const cyraCodeFromText = cyraCodeFromTextMatch ? cyraNormalizeContainerId(cyraCodeFromTextMatch[0]) : "";
+
+    parsed.container_id_detected =
+      cyraNormalizeContainerId(parsed.container_id_detected) ||
+      cyraNormalizeContainerId(parsed.container_id) ||
+      cyraNormalizeContainerId(parsed.contenedor) ||
+      cyraCodeFromText ||
+      "";
+
     if (parsed.invalid) {
       return res.json({
         invalid: true,
@@ -270,6 +296,7 @@ app.post("/api/evaluar-contenedor", async (req, res) => {
 
     res.json({
       invalid: false,
+      container_id_detected: parsed.container_id_detected || "",
       findings
     });
   } catch (error) {
