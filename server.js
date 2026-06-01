@@ -347,92 +347,102 @@ function cyraValidateFindingByFace(f) {
 
 
 /* CYRA FINAL DOOR CODE FIX */
+
 function cyraFinalDoorFix(f) {
   if (!f || typeof f !== "object") return f;
 
-  const face = String(f.faceName || f.face || f.cara || "").toLowerCase();
-  const isDoor = face.includes("puerta") || face.includes("door");
+  const faceText = String(
+    f.faceName ||
+    f.face ||
+    f.cara ||
+    f.side ||
+    f.view ||
+    ""
+  ).toLowerCase();
+
+  const isDoor =
+    faceText.includes("puerta") ||
+    faceText.includes("door") ||
+    String(f.faceName || "").toLowerCase() === "puerta";
 
   if (!isDoor) return f;
 
   const desc = [
     f.description,
     f.descripcion,
+    f.damage_code,
+    f.cyra_location,
+    f.location,
+    f.component_code,
     f.component_name,
     f.component_label,
-    f.cyra_location
+    f.repair_method,
+    f.repair_method_name
   ].join(" ").toLowerCase();
 
-  let second = "X";
+  const oldLoc = String(f.cyra_location || f.location || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+  let newLoc = "DX3N";
 
   if (
+    desc.includes("ambas puertas") ||
+    desc.includes("ambas hojas") ||
+    desc.includes("área completa") ||
+    desc.includes("area completa") ||
+    desc.includes("generalizada") ||
+    desc.includes("2400 x 2400")
+  ) {
+    newLoc = "DX23";
+  } else if (
+    desc.includes("inferior") ||
+    desc.includes("abolladura") ||
+    desc.includes("abajo") ||
+    desc.includes("bottom")
+  ) {
+    newLoc = "DB3N";
+  } else if (
     desc.includes("superior") ||
     desc.includes("arriba") ||
     desc.includes("top") ||
-    desc.includes("techo")
+    desc.includes("pintura") ||
+    desc.includes("corrosión") ||
+    desc.includes("corrosion") ||
+    oldLoc.startsWith("TL") ||
+    oldLoc.startsWith("TR") ||
+    oldLoc.startsWith("TX")
   ) {
-    second = "T";
-  } else if (
-    desc.includes("inferior") ||
-    desc.includes("abajo") ||
-    desc.includes("bottom") ||
-    desc.includes("zócalo") ||
-    desc.includes("zocalo")
-  ) {
-    second = "B";
-  } else if (
-    desc.includes("cabezal") ||
-    desc.includes("header") ||
-    desc.includes("estructura alta")
-  ) {
-    second = "H";
-  } else if (
-    desc.includes("base") ||
-    desc.includes("estructura baja")
-  ) {
-    second = "G";
+    newLoc = "DT3N";
   }
 
-  let third = "3";
-  if (desc.includes("izquierd")) third = "2";
-  if (desc.includes("derech")) third = "3";
-  if (desc.includes("poste izquierdo")) third = "1";
-  if (desc.includes("poste derecho")) third = "4";
+  f.faceName = "Puerta";
+  f.face = "Puerta";
+  f.cara = "Puerta";
+  f.cyra_location = newLoc;
+  f.location = newLoc;
 
-  const loc = String(f.cyra_location || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  let code = String(f.component_code || "").trim();
+  let name = String(f.component_name || "").trim();
+  let label = String(f.component_label || "").trim();
 
-  if (!loc || !loc.startsWith("D")) {
-    f.cyra_location = "D" + second + third + "N";
-  }
-
-  if (!f.component_code || f.component_code === "-") {
-    let code = "DFA";
-    let name = "Ensamblaje del marco/panel de puerta";
-
+  if (!code || code === "-" || !label || label === "-") {
     if (desc.includes("barra") || desc.includes("cierre")) {
       code = "LBR";
       name = "Barra de puerta";
     } else if (desc.includes("bisagra")) {
       code = "HGA";
       name = "Bisagra completa";
-    } else if (desc.includes("friza") || desc.includes("empaque") || desc.includes("sello")) {
+    } else if (desc.includes("sello") || desc.includes("friza") || desc.includes("empaque")) {
       code = "GTA";
       name = "Friza de puerta";
-    } else if (desc.includes("manija")) {
-      code = "LBH";
-      name = "Manija de puerta";
-    } else if (desc.includes("cerradura")) {
-      code = "DHL";
-      name = "Ensamble de cerradura de puerta";
-    } else if (desc.includes("placa") || desc.includes("datos")) {
-      code = "MPD";
-      name = "Placa de consolidación de datos";
-    } else if (f.cyra_location && f.cyra_location.startsWith("DT")) {
-      code = "DST";
-      name = "Refuerzo de puerta superior";
-    } else if (f.cyra_location && f.cyra_location.startsWith("DB")) {
+    } else if (newLoc.startsWith("DB")) {
       code = "DSB";
       name = "Refuerzo de puerta inferior";
+    } else if (newLoc.startsWith("DT")) {
+      code = "DST";
+      name = "Refuerzo de puerta superior";
+    } else {
+      code = "DFA";
+      name = "Ensamblaje del marco/panel de puerta";
     }
 
     f.component_code = code;
@@ -442,6 +452,7 @@ function cyraFinalDoorFix(f) {
 
   return f;
 }
+
 
 function sanitizeFinding(f) {
   const out = { ...f };
