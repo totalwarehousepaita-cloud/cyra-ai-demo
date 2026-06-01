@@ -174,6 +174,275 @@ function parseJsonLoose(text) {
   }
 }
 
+
+/* CYRA COMPONENT NORMALIZATION */
+function cyraNormalizeComponentFields(f) {
+  if (!f || typeof f !== "object") return f;
+
+  f.component_code = String(
+    f.component_code ||
+    f.component ||
+    f.component_iso ||
+    f.part_code ||
+    f.repuesto_codigo ||
+    ""
+  ).toUpperCase().trim();
+
+  f.component_name = String(
+    f.component_name ||
+    f.part_name ||
+    f.repuesto ||
+    f.repuesto_nombre ||
+    f.component_description ||
+    ""
+  ).trim();
+
+  f.repair_method_code = String(
+    f.repair_method_code ||
+    f.repair_code ||
+    ""
+  ).toUpperCase().trim();
+
+  f.repair_method_name = String(
+    f.repair_method_name ||
+    f.repair_method ||
+    f.repair ||
+    ""
+  ).trim();
+
+  if (f.component_code && f.component_name) {
+    f.component_label = f.component_code + " - " + f.component_name;
+  } else {
+    f.component_label = f.component_code || f.component_name || "-";
+  }
+
+  return f;
+}
+
+
+/* CYRA DOOR LOCATION AND COMPONENT VALIDATOR */
+function cyraIsDoorFace(f) {
+  const face = String(f.faceName || f.face || f.cara || "").toLowerCase();
+  return face.includes("puerta") || face.includes("door");
+}
+
+function cyraNormalizeDoorLocation(f) {
+  if (!f || !cyraIsDoorFace(f)) return f;
+
+  let loc = String(f.cyra_location || f.location || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+  // Si está vacío o viene de techo/frontal/lateral, se corrige a puerta.
+  // Formato esperado para puertas: D + zona + sección + extensión.
+  // 2 = puerta izquierda, 3 = puerta derecha. Si no se sabe, usar 3 por defecto.
+  const text = [
+    f.description,
+    f.descripcion,
+    f.component_name,
+    f.component_label,
+    f.repair_method,
+    f.repair_method_name
+  ].join(" ").toLowerCase();
+
+  let second = "X";
+  if (text.includes("superior") || text.includes("arriba") || text.includes("top") || text.includes("cabezal")) {
+    second = "T";
+  } else if (text.includes("inferior") || text.includes("abajo") || text.includes("bottom") || text.includes("zócalo") || text.includes("zocalo")) {
+    second = "B";
+  } else if (text.includes("estructura alta") || text.includes("header")) {
+    second = "H";
+  } else if (text.includes("estructura baja") || text.includes("sill") || text.includes("base")) {
+    second = "G";
+  }
+
+  let third = "3";
+  if (text.includes("izquierd")) third = "2";
+  if (text.includes("derech")) third = "3";
+  if (text.includes("poste izquierdo")) third = "1";
+  if (text.includes("poste derecho")) third = "4";
+
+  let fourth = "N";
+
+  if (!/^D[A-Z0-9]{3}$/.test(loc)) {
+    f.cyra_location = "D" + second + third + fourth;
+    return f;
+  }
+
+  // Si empieza con otro lado aunque tenga 4 caracteres, corregir solo el primer carácter.
+  if (!loc.startsWith("D")) {
+    f.cyra_location = "D" + loc.slice(1, 4);
+    return f;
+  }
+
+  f.cyra_location = loc;
+  return f;
+}
+
+function cyraInferDoorComponent(f) {
+  if (!f || !cyraIsDoorFace(f)) return f;
+
+  const current = String(f.component_code || "").trim();
+  if (current && current !== "-") {
+    if (!f.component_label || f.component_label === "-") {
+      f.component_label = f.component_code + (f.component_name ? " - " + f.component_name : "");
+    }
+    return f;
+  }
+
+  const text = [
+    f.description,
+    f.descripcion,
+    f.damage_code,
+    f.repair_method,
+    f.repair_method_name,
+    f.cyra_location
+  ].join(" ").toLowerCase();
+
+  let code = "DFA";
+  let name = "Ensamblaje del marco de la puerta";
+
+  if (text.includes("barra") || text.includes("cierre") || text.includes("locking bar")) {
+    code = "LBR";
+    name = "Barra de puerta";
+  } else if (text.includes("bisagra") || text.includes("hinge")) {
+    code = "HGA";
+    name = "Bisagra completa";
+  } else if (text.includes("empaque") || text.includes("sello") || text.includes("friza") || text.includes("gasket")) {
+    code = "GTA";
+    name = "Friza de puerta";
+  } else if (text.includes("manija") || text.includes("handle")) {
+    code = "LBH";
+    name = "Manija de puerta";
+  } else if (text.includes("cerradura") || text.includes("lock")) {
+    code = "DHL";
+    name = "Ensamble de cerradura de puerta";
+  } else if (text.includes("placa") || text.includes("datos") || text.includes("data plate")) {
+    code = "MPD";
+    name = "Placa de consolidación de datos";
+  } else if (text.includes("superior") || text.includes("arriba") || String(f.cyra_location || "").startsWith("DT")) {
+    code = "DST";
+    name = "Refuerzo de puerta superior";
+  } else if (text.includes("inferior") || text.includes("abajo") || String(f.cyra_location || "").startsWith("DB")) {
+    code = "DSB";
+    name = "Refuerzo de puerta inferior";
+  } else if (text.includes("centro") || text.includes("central")) {
+    code = "DSC";
+    name = "Refuerzo del borde central de la puerta";
+  } else if (text.includes("panel") || text.includes("corrosión") || text.includes("corrosion") || text.includes("marca") || text.includes("suciedad")) {
+    code = "DFA";
+    name = "Ensamblaje del marco/panel de puerta";
+  }
+
+  f.component_code = code;
+  f.component_name = name;
+  f.component_label = code + " - " + name;
+
+  return f;
+}
+
+function cyraValidateFindingByFace(f) {
+  f = cyraNormalizeDoorLocation(f);
+  f = cyraInferDoorComponent(f);
+  return f;
+}
+
+
+/* CYRA FINAL DOOR CODE FIX */
+function cyraFinalDoorFix(f) {
+  if (!f || typeof f !== "object") return f;
+
+  const face = String(f.faceName || f.face || f.cara || "").toLowerCase();
+  const isDoor = face.includes("puerta") || face.includes("door");
+
+  if (!isDoor) return f;
+
+  const desc = [
+    f.description,
+    f.descripcion,
+    f.component_name,
+    f.component_label,
+    f.cyra_location
+  ].join(" ").toLowerCase();
+
+  let second = "X";
+
+  if (
+    desc.includes("superior") ||
+    desc.includes("arriba") ||
+    desc.includes("top") ||
+    desc.includes("techo")
+  ) {
+    second = "T";
+  } else if (
+    desc.includes("inferior") ||
+    desc.includes("abajo") ||
+    desc.includes("bottom") ||
+    desc.includes("zócalo") ||
+    desc.includes("zocalo")
+  ) {
+    second = "B";
+  } else if (
+    desc.includes("cabezal") ||
+    desc.includes("header") ||
+    desc.includes("estructura alta")
+  ) {
+    second = "H";
+  } else if (
+    desc.includes("base") ||
+    desc.includes("estructura baja")
+  ) {
+    second = "G";
+  }
+
+  let third = "3";
+  if (desc.includes("izquierd")) third = "2";
+  if (desc.includes("derech")) third = "3";
+  if (desc.includes("poste izquierdo")) third = "1";
+  if (desc.includes("poste derecho")) third = "4";
+
+  const loc = String(f.cyra_location || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+  if (!loc || !loc.startsWith("D")) {
+    f.cyra_location = "D" + second + third + "N";
+  }
+
+  if (!f.component_code || f.component_code === "-") {
+    let code = "DFA";
+    let name = "Ensamblaje del marco/panel de puerta";
+
+    if (desc.includes("barra") || desc.includes("cierre")) {
+      code = "LBR";
+      name = "Barra de puerta";
+    } else if (desc.includes("bisagra")) {
+      code = "HGA";
+      name = "Bisagra completa";
+    } else if (desc.includes("friza") || desc.includes("empaque") || desc.includes("sello")) {
+      code = "GTA";
+      name = "Friza de puerta";
+    } else if (desc.includes("manija")) {
+      code = "LBH";
+      name = "Manija de puerta";
+    } else if (desc.includes("cerradura")) {
+      code = "DHL";
+      name = "Ensamble de cerradura de puerta";
+    } else if (desc.includes("placa") || desc.includes("datos")) {
+      code = "MPD";
+      name = "Placa de consolidación de datos";
+    } else if (f.cyra_location && f.cyra_location.startsWith("DT")) {
+      code = "DST";
+      name = "Refuerzo de puerta superior";
+    } else if (f.cyra_location && f.cyra_location.startsWith("DB")) {
+      code = "DSB";
+      name = "Refuerzo de puerta inferior";
+    }
+
+    f.component_code = code;
+    f.component_name = name;
+    f.component_label = code + " - " + name;
+  }
+
+  return f;
+}
+
 function sanitizeFinding(f) {
   const out = { ...f };
 
@@ -314,6 +583,53 @@ app.post("/api/evaluar-contenedor", async (req, res) => {
 // - Si el daño está en barra de cierre, bisagra, empaque, manija o cerradura, usa componentes de puerta.
 // - Si no estás seguro de la zona exacta, usa DX2N o DX3N y explica la incertidumbre en la descripción.
 // 
+    // 
+// REGLAS CYRA PARA COMPONENTE / REPUESTO AFECTADO:
+// 
+// Además de identificar la ubicación y el daño, debes identificar el componente físico afectado del contenedor.
+// 
+// 1) Para cada daño detectado devuelve estos campos:
+// - "component_code": código ISO del componente afectado.
+// - "component_name": nombre del componente/repuesto en español.
+// - "repair_method_code": código ISO del método de reparación cuando aplique.
+// - "repair_method_name": nombre del método de reparación en español.
+// 
+// 2) El componente debe ser coherente con la cara y ubicación:
+// - Puerta: usar componentes de puerta como GTA, GTO, GRS, HGA, HGB, HGP, LBB, LBC, LBG, LBH, LBL, LBR, LBT, DHC, DHR, DPL, DRT, MPD, LHH, DST, DSC, DSB, DSH, DFA, DHL, GIN.
+// - Frontal: usar componentes asociados a frontal como FAS, INP, PBK, THH, TFH, TFF, EPA, BSC, KSS, o componentes de poste/corner si corresponde.
+// - Laterales: usar componentes asociados a laterales como PAA, RDP, VRA, MOL, LSR, RBH, POC, PIM, PIS, RCP, PSL, etc., según el daño.
+// - Techo, si existiera, usar componentes de techo como HEP, RCG, RBO, RBH, TNA, TNG, TIC, TIR, RWB, TNS.
+// - Baja estructura: usar componentes como CMA, CMO, FLA, FLP, FLS, FLW, FSA, TUB, TUC, TUP, RTL, FLT, TFD.
+// 
+// 3) No inventes componentes:
+// - Si el componente exacto no es claro, selecciona el componente más probable según cara, zona y evidencia visual.
+// - Si hay incertidumbre, explícalo brevemente en la descripción.
+// - El componente debe ser compatible con el tipo de daño.
+// 
+// 4) Ejemplos:
+// - Corrosión en panel de puerta: component_code puede ser DSB, DSC, DST, DSH o PAA según zona visible.
+// - Corrosión en barra de cierre: component_code LBR, LBC, LBG, LBH o LBL.
+// - Daño en friza/sello de puerta: component_code GTA, GTO o GIN.
+// - Daño en bisagra: component_code HGA, HGB o HGP.
+// - Placa de datos dañada: component_code MPD.
+// - Marca/logotipo/serial: component_code MOL, MSN, MSD, MST, MMI según corresponda.
+// 
+// 5) El JSON esperado por cada finding debe incluir:
+// {
+//   "faceName": "",
+//   "cyra_location": "",
+//   "damage_code": "",
+//   "component_code": "",
+//   "component_name": "",
+//   "description": "",
+//   "severity": "",
+//   "dimensions_mm": "",
+//   "repair_method_code": "",
+//   "repair_method_name": "",
+//   "repair_method": "",
+//   "confidence": 0
+// }
+// 
     const message = await anthropic.messages.create({
       model: MODEL,
       max_tokens: 3000,
@@ -365,7 +681,7 @@ app.post("/api/evaluar-contenedor", async (req, res) => {
     }
 
     const findings = Array.isArray(parsed.findings)
-      ? parsed.findings.map(sanitizeFinding)
+      ? parsed.findings.map(sanitizeFinding).map(cyraValidateFindingByFace).map(cyraNormalizeComponentFields).map(cyraValidateFindingByFace).map(cyraFinalDoorFix)
       : [];
 
     res.json({
