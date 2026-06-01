@@ -256,6 +256,64 @@ app.post("/api/evaluar-contenedor", async (req, res) => {
 // - Para la cara Puerta, el campo "faceName" debe ser "Puerta".
 // - Para la cara Puerta, el campo "cyra_location" no debe iniciar con FT, TR, RF, TC ni códigos de techo/frontal.
 // 
+    // 
+// REGLAS CYRA PARA CÓDIGO DE CONTENEDOR Y PUERTA:
+// 
+// 1) LECTURA DEL NÚMERO DE CONTENEDOR:
+// - Siempre intenta leer el código ISO 6346 visible en la imagen.
+// - El formato esperado es 4 letras + 7 números. Ejemplo: MSKU0841501.
+// - Puede estar vertical, horizontal, en puerta, lateral o frontal.
+// - Si lo lees, devuelve "container_id_detected" a nivel principal.
+// - Si no lo lees, devuelve "container_id_detected": "".
+// - No inventes códigos.
+// - No uses códigos predeterminados.
+// - No uses PENDIENTE como código detectado.
+// 
+// 2) CODIFICACIÓN DE UBICACIÓN PARA PUERTA:
+// - Si la cara/vista analizada es "Puerta", el código de ubicación CYRA debe iniciar con D.
+// - No uses códigos que inicien con F, T, R o L cuando la cara sea Puerta.
+// - No uses FT, TR, TL, RF, LF ni códigos de techo/frontal/laterales para daños de Puerta.
+// - Para Puerta, usa el siguiente criterio de ubicación:
+//   D = Puertas.
+//   Segundo carácter:
+//     T = mitad superior.
+//     B = mitad inferior.
+//     H = partes estructurales altas / cabezal superior.
+//     G = partes estructurales bajas / zócalo inferior.
+//     X = cruza varias zonas o zona general.
+//   Tercer carácter para puertas:
+//     1 = poste izquierdo.
+//     2 = puerta izquierda.
+//     3 = puerta derecha.
+//     4 = poste derecho.
+//   Cuarto carácter:
+//     N = daño en sección específica.
+//     X = todo el contenedor o zona general.
+//     1 al 4 = si abarca más de una sección continua en puertas/frontal.
+// 
+// 3) EJEMPLOS VÁLIDOS PARA PUERTA:
+// - DT2N: daño en mitad superior de puerta izquierda.
+// - DT3N: daño en mitad superior de puerta derecha.
+// - DB2N: daño en mitad inferior de puerta izquierda.
+// - DB3N: daño en mitad inferior de puerta derecha.
+// - DH2N / DH3N: daño en cabezal/estructura superior de puerta.
+// - DG2N / DG3N: daño en zócalo/estructura baja de puerta.
+// - DX2N / DX3N: daño general en puerta izquierda/derecha.
+// - DX1N / DX4N: daño en poste izquierdo/derecho de puerta.
+// 
+// 4) COMPONENTES PERMITIDOS/PRIORIZADOS EN PUERTA:
+// Prioriza componentes de puerta como:
+// DPL, DHC, DHR, DRT, GTA, GTO, GRS, HGA, HGB, HGP,
+// LBB, LBC, LBG, LBH, LBL, LBR, LBT, RCK, MPD, LHH,
+// CPI, DST, DSC, DSB, DSH, DFA, HWH, DHL, CPR, GIN.
+// 
+// 5) SI LA CARA ES PUERTA:
+// - "faceName" debe ser "Puerta".
+// - "cyra_location" debe iniciar con D.
+// - Si el daño está en panel de puerta, usa DT2N, DT3N, DB2N, DB3N, DX2N o DX3N según corresponda.
+// - Si el daño está en barra de cierre, bisagra, empaque, manija o cerradura, usa componentes de puerta.
+// - Si no estás seguro de la zona exacta, usa DX2N o DX3N y explica la incertidumbre en la descripción.
+// 
     const message = await anthropic.messages.create({
       model: MODEL,
       max_tokens: 3000,
