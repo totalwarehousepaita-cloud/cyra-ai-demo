@@ -858,6 +858,75 @@ img, video, canvas {
   }
 }
 
+
+/* === CYRA FULL DESCRIPTION DISPLAY FIX === */
+
+/* Tabla de resultados / EIR */
+.eirtbl td,
+.eirtbl th {
+  vertical-align: top !important;
+}
+
+.eirtbl td:nth-child(5),
+.eirtbl th:nth-child(5) {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+  line-height: 1.45 !important;
+  max-width: 520px !important;
+  height: auto !important;
+}
+
+/* Tarjetas laterales de hallazgos */
+.aicard,
+.aicard *,
+.rcard,
+.rcard *,
+.finding,
+.finding *,
+.result,
+.result *,
+[class*="finding"],
+[class*="result"] {
+  white-space: normal !important;
+  text-overflow: unset !important;
+}
+
+.aicard div,
+.rcard div,
+.finding div,
+.result div {
+  overflow: visible !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+  line-height: 1.35 !important;
+  height: auto !important;
+  max-height: none !important;
+}
+
+/* Evita que la descripción quede en una sola línea cortada */
+td,
+p,
+span,
+div {
+  text-overflow: unset;
+}
+
+
+/* === CYRA FC2 DESCRIPTION NO CUT FIX === */
+.fc2desc {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+  line-height: 1.35 !important;
+  max-height: none !important;
+  height: auto !important;
+}
+
 </style>
 </head>
 <body>
@@ -1346,7 +1415,7 @@ function renderResults(main){
                   <span class="sb ${SC[fd.severity]}">${SL[fd.severity]}</span>
                   <span style="font-family:monospace;font-size:7px;color:#1e4838;margin-left:auto">${Math.round((fd.confidence||.85)*100)}%</span>
                 </div>
-                <div class="fc2desc">${(fd.description||'').substring(0,70)}</div>
+                <div class="fc2desc">${fd.description||''}</div>
                 <div class="fc2sub">📐 ${fd.dimensions_mm||'—'} · 🔧 ${fd.repair_method||'—'}</div>
               </div>
             </div>`;
@@ -1377,7 +1446,7 @@ function renderEIR(main){
     <td><span style="font-family:monospace;font-size:8px;color:#00b4f0">${f.faceName||f.face}</span></td>
     <td><span style="font-family:monospace;font-size:10px;font-weight:700;color:#00d278;background:rgba(0,210,120,.08);border:1px solid rgba(0,210,120,.2);padding:1px 5px;border-radius:3px;letter-spacing:1px">${f.cyra_location||'—'}</span></td>
     <td><span style="font-family:monospace;font-size:9px;color:#f0a800;font-weight:700">${f.damage_code}</span></td>
-    <td style="font-size:8px;max-width:100px">${(f.description||'—').substring(0,45)}</td>
+    <td style="font-size:8px;max-width:100px">${f.description||'-'}</td>
     <td><span class="sb ${SC[f.severity]}">${SL[f.severity]}</span></td>
     <td style="font-family:monospace;font-size:8px;color:#5a9080">${f.dimensions_mm||'—'}</td>
     <td style="font-size:8px">${(f.repair_method||'—').substring(0,18)}</td>
