@@ -1250,15 +1250,15 @@ async function callCyraEvaluator(face,img){
   if(!response.ok){
     let detail = '';
     try {
-      const err = await response.json();
+      const err = await response.clone().json();
       detail = err.detail || err.error || JSON.stringify(err);
     } catch(e) {
-      detail = await response.text();
+      detail = await response.clone().text();
     }
     throw new Error(`CYRA AI Evaluator ${response.status}: ${detail}`);
   }
 
-  const data = await response.json();
+  const data = await response.clone().json();
 
   if(data.invalid){
     return {invalid:true, reason:data.reason || 'La imagen no corresponde a una superficie externa de contenedor.'};
