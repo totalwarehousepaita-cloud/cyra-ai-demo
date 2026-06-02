@@ -824,6 +824,40 @@ img, video, canvas {
 }
 
 
+
+/* === CYRA DESCRIPTION FULL TEXT FIX === */
+.eirtbl td,
+.eirtbl th {
+  vertical-align: top !important;
+}
+
+.eirtbl td:nth-child(5),
+.eirtbl th:nth-child(5) {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  word-break: normal !important;
+  overflow-wrap: anywhere !important;
+  line-height: 1.45 !important;
+  max-width: 360px !important;
+}
+
+.eirtbl td {
+  height: auto !important;
+}
+
+@media print {
+  .eirtbl td:nth-child(5),
+  .eirtbl th:nth-child(5) {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    overflow-wrap: anywhere !important;
+    max-width: none !important;
+    line-height: 1.35 !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1689,6 +1723,7 @@ document.addEventListener("click", function() {
           ST.container = code;
           ST.cid = code;
           ST.container_id_detected = code;
+          if (typeof cyraApplyContainerUiCode === "function") cyraApplyContainerUiCode(code);
           console.log("CYRA contenedor detectado por IA:", code);
         }
       }catch(e){}
@@ -1707,6 +1742,7 @@ document.addEventListener("click", function() {
         ST.container = "";
         ST.cid = "";
         ST.container_id_detected = "";
+        if (typeof cyraApplyContainerUiCode === "function") cyraApplyContainerUiCode("");
       }
       return originalNewReq.apply(this, arguments);
     };
@@ -1764,6 +1800,40 @@ document.addEventListener("click", function() {
     }
   });
 })();
+
+
+/* === CYRA CONTAINER UI SYNC FIX === */
+function cyraNormalizeContainerUiCode(value){
+  const clean = String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").trim();
+  return /^[A-Z]{4}\d{7}$/.test(clean) ? clean : "";
+}
+
+function cyraApplyContainerUiCode(value){
+  const code = cyraNormalizeContainerUiCode(value);
+  const shown = code || "PENDIENTE";
+
+  if(window.ST){
+    ST.containerId = code;
+    ST.container = code;
+    ST.container_id_detected = code;
+          if (typeof cyraApplyContainerUiCode === "function") cyraApplyContainerUiCode(code);
+  }
+
+  const hcode = document.getElementById("hcode");
+  if(hcode){
+    hcode.textContent = shown;
+  }
+
+  document.querySelectorAll("input").forEach(input => {
+    const ph = String(input.placeholder || "").toUpperCase();
+    const id = String(input.id || "").toUpperCase();
+    if(ph.includes("MSI") || ph.includes("CONTENEDOR") || id.includes("CONTAINER") || id.includes("CONTENEDOR")){
+      if(code) input.value = code;
+    }
+  });
+
+  return code;
+}
 
 </script>
 </body>
