@@ -1386,7 +1386,7 @@ function renderResults(main){
                   <span class="sb ${SC[fd.severity]}">${SL[fd.severity]}</span>
                   <span style="font-family:monospace;font-size:7px;color:#1e4838;margin-left:auto">${Math.round((fd.confidence||.85)*100)}%</span>
                 </div>
-                <div class="fc2desc">${cyraShortDesc(fd.description||'')}</div>
+                <div class="fc2desc">${cyraShortDesc(fd.description||'', 78)}</div>
                 <div class="fc2sub">📐 ${fd.dimensions_mm||'—'} · 🔧 ${fd.repair_method||'—'}</div>
               </div>
             </div>`;
@@ -1417,7 +1417,7 @@ function renderEIR(main){
     <td><span style="font-family:monospace;font-size:8px;color:#00b4f0">${f.faceName||f.face}</span></td>
     <td><span style="font-family:monospace;font-size:10px;font-weight:700;color:#00d278;background:rgba(0,210,120,.08);border:1px solid rgba(0,210,120,.2);padding:1px 5px;border-radius:3px;letter-spacing:1px">${f.cyra_location||'—'}</span></td>
     <td><span style="font-family:monospace;font-size:9px;color:#f0a800;font-weight:700">${f.damage_code}</span></td>
-    <td style="font-size:8px;max-width:100px">${cyraShortDesc(f.description||'-')}</td>
+    <td style="font-size:8px;max-width:100px">${cyraShortDesc(f.description||'-', 78)}</td>
     <td><span class="sb ${SC[f.severity]}">${SL[f.severity]}</span></td>
     <td style="font-family:monospace;font-size:8px;color:#5a9080">${f.dimensions_mm||'—'}</td>
     <td style="font-size:8px">${(f.repair_method||'—').substring(0,18)}</td>
@@ -1877,7 +1877,7 @@ function cyraApplyContainerUiCode(value){
 
 
 /* === CYRA SMART SHORT DESCRIPTION FIX === */
-function cyraShortDesc(text, maxLen = 115) {
+function cyraShortDesc(text, maxLen = 78) {
   let t = String(text || "")
     .replace(/\s+/g, " ")
     .replace(/\s+([,.])/g, "$1")
@@ -1885,37 +1885,74 @@ function cyraShortDesc(text, maxLen = 115) {
 
   if (!t) return "-";
 
-  // Limpieza de frases largas/redundantes sin perder sentido técnico
   t = t
     .replace(/zona de /gi, "")
     .replace(/se observa(n)? /gi, "")
     .replace(/visible(s)? /gi, "")
-    .replace(/de gran extensión/gi, "extensas")
+    .replace(/distribuidas? en la zona /gi, "en ")
+    .replace(/distribuidos? en la zona /gi, "en ")
+    .replace(/distribuidas? en /gi, "en ")
+    .replace(/distribuidos? en /gi, "en ")
+    .replace(/de mediana a gran profundidad/gi, "profundas")
+    .replace(/de mediana profundidad/gi, "medianas")
+    .replace(/de gran profundidad/gi, "profundas")
     .replace(/pérdida significativa de geometría estructural/gi, "pérdida de geometría")
+    .replace(/pérdida de geometría estructural/gi, "pérdida de geometría")
     .replace(/oxidación activa visible/gi, "oxidación activa")
-    .replace(/desprendimiento severo de la capa de pintura/gi, "desprendimiento severo de pintura")
+    .replace(/desprendimiento severo de la capa de pintura/gi, "desprendimiento de pintura")
     .replace(/desprendimiento extenso de pintura/gi, "desprendimiento de pintura")
     .replace(/superficial generalizada/gi, "generalizada")
     .replace(/múltiples abolladuras/gi, "Abolladuras múltiples")
     .replace(/abolladuras múltiples/gi, "Abolladuras múltiples")
+    .replace(/delaminación y levantamiento de capa de pintura/gi, "Delaminación de pintura")
+    .replace(/corrosión superficial generalizada/gi, "Corrosión generalizada")
+    .replace(/corrosión generalizada con pérdida de pintura/gi, "Corrosión con pérdida de pintura")
+    .replace(/parche o reparación previa/gi, "Reparación previa")
     .replace(/marcas de letras y números/gi, "Marcas de letras/números")
-    .replace(/en la imagen/gi, "")
     .replace(/hacia la zona/gi, "en zona")
-    .replace(/con deformaciones en corrugaciones/gi, "con deformación en corrugaciones")
+    .replace(/con deformaciones en corrugaciones/gi, "con deformación")
+    .replace(/con deformación en corrugaciones/gi, "con deformación")
     .replace(/exponiendo metal base/gi, "con metal expuesto")
     .replace(/con áreas de/gi, "con")
+    .replace(/en la imagen/gi, "")
+    .replace(/panel inferior del panel lateral/gi, "panel inferior lateral")
+    .replace(/panel inferior lateral derecho/gi, "panel inferior derecho")
+    .replace(/panel inferior lateral izquierdo/gi, "panel inferior izquierdo")
     .replace(/\s+/g, " ")
     .trim();
 
-  if (t.length <= maxLen) return t;
+  // Frases técnicas aún más cortas por patrón
+  const low = t.toLowerCase();
 
-  // Cortar por frase si es posible
-  const sentences = t.split(/(?<=[.!?])\s+/);
-  if (sentences.length > 1 && sentences[0].length <= maxLen) {
-    return sentences[0].replace(/[.!?]$/, "") + ".";
+  if (low.includes("abolladuras múltiples") && low.includes("inferior")) {
+    if (low.includes("pérdida") || low.includes("geometría")) {
+      return "Abolladuras múltiples profundas en panel inferior.";
+    }
+    return "Abolladuras múltiples en panel inferior lateral.";
   }
 
-  // Cortar por palabra, no por letra
+  if (low.includes("abolladura profunda")) {
+    return "Abolladura profunda localizada en panel inferior.";
+  }
+
+  if (low.includes("corrosión") && low.includes("pérdida de pintura")) {
+    return "Corrosión con pérdida de pintura en superficie del panel.";
+  }
+
+  if (low.includes("corrosión") && low.includes("oxidación")) {
+    return "Corrosión generalizada con oxidación activa.";
+  }
+
+  if (low.includes("delaminación") || low.includes("levantamiento")) {
+    return "Delaminación de pintura con desprendimiento visible.";
+  }
+
+  if (low.includes("reparación previa") || low.includes("parche")) {
+    return "Reparación previa no conforme en panel inferior.";
+  }
+
+  if (t.length <= maxLen) return t;
+
   const words = t.split(" ");
   let out = "";
 
