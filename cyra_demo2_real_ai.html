@@ -2173,101 +2173,35 @@ function cyraShortDesc(text, maxLen = 78) {
 })();
 
 
-/* === CYRA FORCE DOOR UI DP DR DH FIX === */
-function cyraForceDoorUiFinding(f) {
-  if (!f || typeof f !== "object") return f;
 
-  const txt = [
-    f.faceName,
-    f.face,
-    f.cara,
-    f.description,
-    f.descripcion,
-    f.damage_code,
-    f.cyra_location,
-    f.location,
-    f.component_code,
-    f.component_name,
-    f.component_label,
-    f.repair_method,
-    f.repair_method_name
-  ].join(" ").toLowerCase();
+/* === CYRA STRONG DOOR CODE OVERRIDE DP DR DH === */
+(function(){
+  function isWrongDoorLocationCode(txt){
+    const clean = String(txt || "")
+      .toUpperCase()
+      .replace(/\s+/g, " ")
+      .trim();
 
-  let code = "DP";
-  let compCode = "DPL";
-  let compName = "Panel de puerta";
+    if (!clean) return false;
 
-  if (
-    txt.includes("bisagra") ||
-    txt.includes("hinge") ||
-    txt.includes("barra") ||
-    txt.includes("cierre") ||
-    txt.includes("locking") ||
-    txt.includes("cerradura") ||
-    txt.includes("manija") ||
-    txt.includes("handle") ||
-    txt.includes("sello") ||
-    txt.includes("empaque") ||
-    txt.includes("friza") ||
-    txt.includes("gasket")
-  ) {
-    code = "DH";
+    // No tocar códigos de daño reales
+    const damageCodes = ["CO","DT","DL","IR","ML","DY","OF","GD","BW","LK","HO","MS","NI","BN","CK","PH"];
+    if (damageCodes.includes(clean)) return false;
 
-    if (txt.includes("bisagra") || txt.includes("hinge")) {
-      compCode = "HGA";
-      compName = "Bisagra completa";
-    } else if (txt.includes("barra") || txt.includes("cierre") || txt.includes("locking")) {
-      compCode = "LBR";
-      compName = "Barra de cierre de puerta";
-    } else if (txt.includes("cerradura")) {
-      compCode = "DHL";
-      compName = "Cerradura de puerta";
-    } else if (txt.includes("manija") || txt.includes("handle")) {
-      compCode = "LBH";
-      compName = "Manija de puerta";
-    } else if (txt.includes("sello") || txt.includes("empaque") || txt.includes("friza") || txt.includes("gasket")) {
-      compCode = "GTA";
-      compName = "Friza / empaque de puerta";
-    }
-  } else if (
-    txt.includes("puerta derecha") ||
-    txt.includes("hoja derecha") ||
-    txt.includes("right door") ||
-    txt.includes("derecha")
-  ) {
-    code = "DR";
-    compCode = "DPL";
-    compName = "Panel de puerta derecha";
-  } else {
-    code = "DP";
-    compCode = "DPL";
-    compName = "Panel de puerta";
+    // No tocar los códigos correctos
+    if (["DP","DR","DH"].includes(clean)) return false;
+
+    // Captura códigos incorrectos tipo RLT N, RRT N, RLB N, RRB N, RRH N, PLT N, PRT N, PLB N, PRB N
+    if (/^[A-Z]{2,4}\s?N$/.test(clean)) return true;
+
+    // Captura códigos tipo TL3N, TR8N, RB10, RL1N, RR1N, FT1R, etc.
+    if (/^[A-Z]{1,3}\d{1,2}[A-Z]?$/.test(clean)) return true;
+
+    return false;
   }
 
-  f.faceName = "Puerta";
-  f.face = "Puerta";
-  f.cara = "Puerta";
-  f.cyra_location = code;
-  f.location = code;
-
-  f.component_code = compCode;
-  f.component_name = compName;
-  f.component_label = compCode + " - " + compName;
-
-  return f;
-}
-
-function cyraForceDoorUiArray(arr) {
-  return Array.isArray(arr) ? arr.map(cyraForceDoorUiFinding) : arr;
-}
-
-
-/* === CYRA VISUAL DOOR CODE OVERRIDE === */
-(function(){
-  const BAD_DOOR_CODES = /^(PLT\s*N|PRT\s*N|PLB\s*N|PRB\s*N|RR\d+N|RL\d+N|RB\d+N|RT\d+N|TL\d+N|TR\d+N|FT\d+N|FB\d+N|PLTN|PRTN|PLBN|PRBN)$/i;
-
-  function getDoorCodeFromText(text){
-    const t = String(text || "").toLowerCase();
+  function chooseDoorCode(context){
+    const t = String(context || "").toLowerCase();
 
     if (
       t.includes("bisagra") ||
@@ -2287,7 +2221,8 @@ function cyraForceDoorUiArray(arr) {
     if (
       t.includes("puerta derecha") ||
       t.includes("hoja derecha") ||
-      t.includes("right door")
+      t.includes("right door") ||
+      t.includes("derecha de la puerta")
     ) {
       return "DR";
     }
@@ -2295,98 +2230,144 @@ function cyraForceDoorUiArray(arr) {
     return "DP";
   }
 
-  function fixDoorCodesInDom(){
-    const bodyText = String(document.body.innerText || "").toUpperCase();
-    if (!bodyText.includes("PUERTA")) return;
+  function forceDoorState(){
+    if (!window.ST) return;
 
-    // Buscar tarjetas/bloques donde aparecen hallazgos
-    const possibleCards = Array.from(document.querySelectorAll("div, span"));
+    function fixFinding(f, forceDoor){
+      if (!f || typeof f !== "object") return f;
 
-    possibleCards.forEach(el => {
-      const txt = String(el.textContent || "").trim();
+      const txt = [
+        f.faceName,
+        f.face,
+        f.cara,
+        f.description,
+        f.descripcion,
+        f.damage_code,
+        f.cyra_location,
+        f.location,
+        f.component_code,
+        f.component_name,
+        f.component_label,
+        f.repair_method
+      ].join(" ");
 
-      // Solo corregir etiquetas pequeñas de código, no textos largos
-      if (!txt || txt.length > 8) return;
+      const isDoor =
+        forceDoor ||
+        String(f.faceName || f.face || f.cara || "").toLowerCase().includes("puerta") ||
+        String(f.faceName || f.face || f.cara || "").toLowerCase().includes("door");
 
-      const clean = txt.replace(/\s+/g, " ").trim();
+      if (!isDoor) return f;
 
-      if (BAD_DOOR_CODES.test(clean)) {
-        const card = el.closest("div") || el.parentElement || document.body;
-        const context = String((card.parentElement?.innerText || card.innerText || document.body.innerText || ""));
-        el.textContent = getDoorCodeFromText(context);
-      }
-    });
+      const code = chooseDoorCode(txt);
 
-    // También corregir directamente en arrays internos para EIR / resultados futuros
-    if (window.ST) {
-      const fixFinding = f => {
-        if (!f || typeof f !== "object") return f;
+      f.faceName = "Puerta";
+      f.face = "Puerta";
+      f.cara = "Puerta";
+      f.cyra_location = code;
+      f.location = code;
 
-        const faceTxt = String(f.faceName || f.face || f.cara || "").toLowerCase();
-        const desc = [
-          f.description,
-          f.descripcion,
-          f.damage_code,
-          f.cyra_location,
-          f.location,
-          f.component_code,
-          f.component_name,
-          f.component_label
-        ].join(" ");
-
-        // Si estamos en pantalla Puerta o el finding dice Puerta, forzar código
-        if (bodyText.includes("PUERTA") || faceTxt.includes("puerta") || faceTxt.includes("door")) {
-          const code = getDoorCodeFromText(desc);
-          f.faceName = "Puerta";
-          f.face = "Puerta";
-          f.cara = "Puerta";
-          f.cyra_location = code;
-          f.location = code;
-
-          if (!f.component_code || f.component_code === "-" || !f.component_label || f.component_label === "-") {
-            f.component_code = code === "DH" ? "LBR" : "DPL";
-            f.component_name = code === "DH" ? "Herraje / barra de puerta" : "Panel de puerta";
-            f.component_label = f.component_code + " - " + f.component_name;
-          }
+      if (!f.component_code || f.component_code === "-" || !f.component_label || f.component_label === "-") {
+        if (code === "DH") {
+          f.component_code = "LBR";
+          f.component_name = "Herraje / barra de puerta";
+        } else if (code === "DR") {
+          f.component_code = "DPL";
+          f.component_name = "Panel de puerta derecha";
+        } else {
+          f.component_code = "DPL";
+          f.component_name = "Panel de puerta";
         }
 
-        return f;
-      };
-
-      if (Array.isArray(ST.findings)) {
-        ST.findings = ST.findings.map(fixFinding);
+        f.component_label = f.component_code + " - " + f.component_name;
       }
 
-      if (ST.faceFindings && typeof ST.faceFindings === "object") {
-        Object.keys(ST.faceFindings).forEach(k => {
-          if (Array.isArray(ST.faceFindings[k])) {
-            ST.faceFindings[k] = ST.faceFindings[k].map(fixFinding);
+      return f;
+    }
+
+    // Forzar específicamente la cara cuyo nombre sea Puerta
+    if (typeof FACES !== "undefined" && Array.isArray(FACES) && ST.faceFindings) {
+      FACES.forEach(face => {
+        if (String(face.name || "").toLowerCase().includes("puerta")) {
+          const id = face.id;
+          if (Array.isArray(ST.faceFindings[id])) {
+            ST.faceFindings[id] = ST.faceFindings[id].map(f => fixFinding(f, true));
           }
-        });
-      }
+        }
+      });
+    }
+
+    // Forzar también en ST.findings si el finding declara Puerta
+    if (Array.isArray(ST.findings)) {
+      ST.findings = ST.findings.map(f => fixFinding(f, false));
     }
   }
 
-  // Ejecutar después de cada render/click, sin romper login
+  function forceDoorDom(){
+    const pageText = String(document.body.innerText || "").toUpperCase();
+
+    // Solo actuar si la vista actual realmente muestra bloque de PUERTA
+    if (!pageText.includes("PUERTA")) return;
+
+    document.querySelectorAll("span, div, b, strong").forEach(el => {
+      const txt = String(el.textContent || "").replace(/\s+/g, " ").trim();
+
+      if (!isWrongDoorLocationCode(txt)) return;
+
+      const box =
+        el.closest("[class*='card']") ||
+        el.closest("[class*='finding']") ||
+        el.closest("[class*='result']") ||
+        el.parentElement;
+
+      const context = String(box?.innerText || el.parentElement?.innerText || document.body.innerText || "");
+
+      // Evitar tocar etiquetas sobre la imagen si son códigos de daño como CO, DY, ML, etc.
+      const newCode = chooseDoorCode(context);
+      el.textContent = newCode;
+    });
+  }
+
+  function runDoorFix(){
+    forceDoorState();
+    forceDoorDom();
+  }
+
+  // Hook sobre renderView
+  if (typeof window.renderView === "function" && !window.__cyraStrongDoorRenderHook) {
+    window.__cyraStrongDoorRenderHook = true;
+    const oldRenderView = window.renderView;
+
+    window.renderView = function(){
+      const result = oldRenderView.apply(this, arguments);
+      setTimeout(runDoorFix, 50);
+      setTimeout(runDoorFix, 200);
+      setTimeout(runDoorFix, 600);
+      return result;
+    };
+  }
+
+  // Hook sobre clicks
   document.addEventListener("click", function(){
-    setTimeout(fixDoorCodesInDom, 80);
-    setTimeout(fixDoorCodesInDom, 300);
-    setTimeout(fixDoorCodesInDom, 800);
+    setTimeout(runDoorFix, 80);
+    setTimeout(runDoorFix, 250);
+    setTimeout(runDoorFix, 700);
   }, true);
 
+  // Hook sobre cambios del DOM
   const observer = new MutationObserver(() => {
-    clearTimeout(window.__cyraDoorCodeTimer);
-    window.__cyraDoorCodeTimer = setTimeout(fixDoorCodesInDom, 120);
+    clearTimeout(window.__cyraStrongDoorTimer);
+    window.__cyraStrongDoorTimer = setTimeout(runDoorFix, 120);
   });
 
   window.addEventListener("load", () => {
     try {
       observer.observe(document.body, { childList: true, subtree: true, characterData: true });
     } catch(e){}
-    setTimeout(fixDoorCodesInDom, 500);
+    setTimeout(runDoorFix, 500);
+    setTimeout(runDoorFix, 1200);
   });
 
-  window.cyraFixDoorCodesInDom = fixDoorCodesInDom;
+  window.cyraRunDoorCodeFix = runDoorFix;
 })();
 
 </script>
