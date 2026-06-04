@@ -454,6 +454,106 @@ function cyraFinalDoorFix(f) {
 }
 
 
+
+/* CYRA FINAL FORCE DOOR AND CONTAINER OCR */
+function cyraIsDoorRequest(body, finding) {
+  const txt = [
+    body?.faceName,
+    body?.face,
+    body?.side,
+    body?.view,
+    body?.cara,
+    body?.section,
+    body?.component,
+    finding?.faceName,
+    finding?.face,
+    finding?.cara
+  ].join(" ").toLowerCase();
+
+  return txt.includes("puerta") || txt.includes("door");
+}
+
+function cyraForceDoorFinding(f, body) {
+  if (!f || typeof f !== "object") return f;
+  if (!cyraIsDoorRequest(body, f)) return f;
+
+  const txt = [
+    f.description,
+    f.descripcion,
+    f.damage_code,
+    f.cyra_location,
+    f.location,
+    f.dimensions_mm,
+    f.repair_method,
+    f.component_code,
+    f.component_name,
+    f.component_label
+  ].join(" ").toLowerCase();
+
+  let loc = "DX3N";
+
+  if (
+    txt.includes("ambas") ||
+    txt.includes("completa") ||
+    txt.includes("generalizada") ||
+    txt.includes("toda la puerta") ||
+    txt.includes("2300 x 2300") ||
+    txt.includes("2400 x 2400")
+  ) {
+    loc = "DX23";
+  } else if (
+    txt.includes("inferior") ||
+    txt.includes("abajo") ||
+    txt.includes("abolladura") ||
+    txt.includes("bottom")
+  ) {
+    loc = "DB3N";
+  } else if (
+    txt.includes("superior") ||
+    txt.includes("arriba") ||
+    txt.includes("top") ||
+    txt.includes("corrosión") ||
+    txt.includes("corrosion") ||
+    txt.includes("pintura")
+  ) {
+    loc = "DT3N";
+  }
+
+  f.faceName = "Puerta";
+  f.face = "Puerta";
+  f.cara = "Puerta";
+  f.cyra_location = loc;
+  f.location = loc;
+
+  if (!f.component_code || f.component_code === "-" || !f.component_label || f.component_label === "-") {
+    let code = "DFA";
+    let name = "Ensamblaje del marco/panel de puerta";
+
+    if (txt.includes("barra") || txt.includes("cierre")) {
+      code = "LBR";
+      name = "Barra de puerta";
+    } else if (txt.includes("bisagra")) {
+      code = "HGA";
+      name = "Bisagra completa";
+    } else if (txt.includes("friza") || txt.includes("empaque") || txt.includes("sello")) {
+      code = "GTA";
+      name = "Friza de puerta";
+    } else if (loc.startsWith("DB")) {
+      code = "DSB";
+      name = "Refuerzo de puerta inferior";
+    } else if (loc.startsWith("DT")) {
+      code = "DST";
+      name = "Refuerzo de puerta superior";
+    }
+
+    f.component_code = code;
+    f.component_name = name;
+    f.component_label = code + " - " + name;
+  }
+
+  return f;
+}
+
 function sanitizeFinding(f) {
   const out = { ...f };
 
@@ -694,6 +794,8 @@ app.post("/api/evaluar-contenedor", async (req, res) => {
     const findings = Array.isArray(parsed.findings)
       ? parsed.findings.map(sanitizeFinding).map(cyraValidateFindingByFace).map(cyraNormalizeComponentFields).map(cyraValidateFindingByFace).map(cyraFinalDoorFix)
       : [];
+
+    findings = findings.map(f => cyraForceDoorFinding(f, body));
 
     res.json({
       invalid: false,

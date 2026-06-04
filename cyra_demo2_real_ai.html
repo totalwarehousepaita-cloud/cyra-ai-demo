@@ -1964,6 +1964,107 @@ function cyraShortDesc(text, maxLen = 78) {
   return out.replace(/[,.:-]+$/, "") + ".";
 }
 
+
+/* === CYRA SAFE CONTAINER AUTO MANUAL PATCH === */
+(function(){
+  function normalizeContainer(code){
+    const clean = String(code || "").toUpperCase().replace(/[^A-Z0-9]/g, "").trim();
+    return /^[A-Z]{4}\d{7}$/.test(clean) ? clean : "";
+  }
+
+  function applyContainer(code, silent){
+    const clean = normalizeContainer(code);
+
+    if(!clean){
+      if(!silent) alert("Ingresa un código válido. Ejemplo: SEGU9824376");
+      return false;
+    }
+
+    if(window.ST){
+      ST.containerId = clean;
+      ST.container = clean;
+      ST.container_id_detected = clean;
+    }
+
+    const hcode = document.getElementById("hcode");
+    if(hcode) hcode.textContent = clean;
+
+    document.querySelectorAll("input").forEach(input=>{
+      const ph = String(input.placeholder || "").toUpperCase();
+      const id = String(input.id || "").toUpperCase();
+      if(ph.includes("MSI") || ph.includes("CONTENEDOR") || id.includes("CONTAINER") || id.includes("CONTENEDOR")){
+        input.value = clean;
+      }
+    });
+
+    return true;
+  }
+
+  function clearContainer(){
+    if(window.ST){
+      ST.containerId = "";
+      ST.container = "";
+      ST.container_id_detected = "";
+    }
+    const hcode = document.getElementById("hcode");
+    if(hcode) hcode.textContent = "PENDIENTE";
+  }
+
+  // Botón manual APLICAR
+  document.addEventListener("click", function(e){
+    const btn = e.target.closest("button");
+    if(!btn) return;
+
+    const label = String(btn.textContent || "").toUpperCase();
+    const area = btn.closest("aside,section,div") || document;
+    const areaText = String(area.textContent || "").toUpperCase();
+
+    if(label.includes("APLICAR") && areaText.includes("CONTENEDOR")){
+      e.preventDefault();
+      e.stopPropagation();
+
+      const input = Array.from(area.querySelectorAll("input")).find(i=>{
+        const ph = String(i.placeholder || "").toUpperCase();
+        const id = String(i.id || "").toUpperCase();
+        return ph.includes("MSI") || ph.includes("CONTENEDOR") || id.includes("CONTAINER") || id.includes("CONTENEDOR");
+      }) || document.querySelector("input[placeholder*='MSI'], input[placeholder*='Contenedor'], input[placeholder*='CONTENEDOR']");
+
+      if(input) applyContainer(input.value, false);
+    }
+  }, true);
+
+  // OCR automático desde respuesta del backend sin consumir body original
+  if(typeof window.fetch === "function" && !window.__cyraSafeContainerFetchPatch){
+    window.__cyraSafeContainerFetchPatch = true;
+    const originalFetch = window.fetch;
+
+    window.fetch = async function(){
+      const response = await originalFetch.apply(this, arguments);
+
+      try{
+        const clone = response.clone();
+        const data = await clone.json();
+        const code = normalizeContainer(data.container_id_detected || data.container_id || data.contenedor || "");
+        if(code) applyContainer(code, true);
+      }catch(err){}
+
+      return response;
+    };
+  }
+
+  // Nueva solicitud limpia el código
+  if(typeof window.newReq === "function" && !window.__cyraContainerNewReqPatch){
+    window.__cyraContainerNewReqPatch = true;
+    const oldNewReq = window.newReq;
+    window.newReq = function(){
+      clearContainer();
+      return oldNewReq.apply(this, arguments);
+    };
+  }
+
+  window.cyraApplyContainer = applyContainer;
+})();
+
 </script>
 </body>
 </html>
