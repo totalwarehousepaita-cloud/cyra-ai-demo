@@ -554,6 +554,122 @@ function cyraForceDoorFinding(f, body) {
   return f;
 }
 
+
+/* CYRA FINAL DOOR DP DR DH VALIDATOR */
+function cyraFinalDoorDpDrDh(f, body) {
+  if (!f || typeof f !== "object") return f;
+
+  const requestFace = [
+    body?.faceName,
+    body?.face,
+    body?.side,
+    body?.view,
+    body?.cara,
+    body?.section
+  ].join(" ").toLowerCase();
+
+  const findingFace = [
+    f.faceName,
+    f.face,
+    f.cara
+  ].join(" ").toLowerCase();
+
+  const isDoor =
+    requestFace.includes("puerta") ||
+    requestFace.includes("door") ||
+    findingFace.includes("puerta") ||
+    findingFace.includes("door");
+
+  if (!isDoor) return f;
+
+  const txt = [
+    f.description,
+    f.descripcion,
+    f.damage_code,
+    f.cyra_location,
+    f.location,
+    f.component_code,
+    f.component_name,
+    f.component_label,
+    f.repair_method,
+    f.repair_method_name
+  ].join(" ").toLowerCase();
+
+  let doorCode = "DP";
+  let compCode = "DPL";
+  let compName = "Panel de puerta";
+
+  // Herrajes / bisagras / barras / cerraduras
+  if (
+    txt.includes("bisagra") ||
+    txt.includes("hinge") ||
+    txt.includes("barra") ||
+    txt.includes("cierre") ||
+    txt.includes("locking") ||
+    txt.includes("cerradura") ||
+    txt.includes("manija") ||
+    txt.includes("handle") ||
+    txt.includes("sello") ||
+    txt.includes("empaque") ||
+    txt.includes("friza") ||
+    txt.includes("gasket")
+  ) {
+    doorCode = "DH";
+
+    if (txt.includes("bisagra") || txt.includes("hinge")) {
+      compCode = "HGA";
+      compName = "Bisagra completa";
+    } else if (txt.includes("barra") || txt.includes("cierre") || txt.includes("locking")) {
+      compCode = "LBR";
+      compName = "Barra de cierre de puerta";
+    } else if (txt.includes("cerradura")) {
+      compCode = "DHL";
+      compName = "Cerradura de puerta";
+    } else if (txt.includes("manija") || txt.includes("handle")) {
+      compCode = "LBH";
+      compName = "Manija de puerta";
+    } else if (txt.includes("sello") || txt.includes("empaque") || txt.includes("friza") || txt.includes("gasket")) {
+      compCode = "GTA";
+      compName = "Friza / empaque de puerta";
+    }
+  }
+
+  // Puerta derecha explícita
+  else if (
+    txt.includes("puerta derecha") ||
+    txt.includes("hoja derecha") ||
+    txt.includes("right door") ||
+    txt.includes("derecha de la puerta")
+  ) {
+    doorCode = "DR";
+    compCode = "DPL";
+    compName = "Panel de puerta derecha";
+  }
+
+  // Panel general / ambas puertas / puerta izquierda / corrosión / suciedad / marcas
+  else {
+    doorCode = "DP";
+    compCode = "DPL";
+    compName = "Panel de puerta";
+  }
+
+  f.faceName = "Puerta";
+  f.face = "Puerta";
+  f.cara = "Puerta";
+
+  // Este es el código que se muestra en CÓD. CYRA
+  f.cyra_location = doorCode;
+  f.location = doorCode;
+
+  if (!f.component_code || f.component_code === "-" || !f.component_label || f.component_label === "-") {
+    f.component_code = compCode;
+    f.component_name = compName;
+    f.component_label = compCode + " - " + compName;
+  }
+
+  return f;
+}
+
 function sanitizeFinding(f) {
   const out = { ...f };
 
@@ -796,6 +912,8 @@ app.post("/api/evaluar-contenedor", async (req, res) => {
       : [];
 
     findings = findings.map(f => cyraForceDoorFinding(f, body));
+
+    findings = findings.map(f => cyraFinalDoorDpDrDh(f, body));
 
     res.json({
       invalid: false,
