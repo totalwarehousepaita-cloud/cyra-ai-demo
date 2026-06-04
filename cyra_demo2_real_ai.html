@@ -2261,6 +2261,134 @@ function cyraForceDoorUiArray(arr) {
   return Array.isArray(arr) ? arr.map(cyraForceDoorUiFinding) : arr;
 }
 
+
+/* === CYRA VISUAL DOOR CODE OVERRIDE === */
+(function(){
+  const BAD_DOOR_CODES = /^(PLT\s*N|PRT\s*N|PLB\s*N|PRB\s*N|RR\d+N|RL\d+N|RB\d+N|RT\d+N|TL\d+N|TR\d+N|FT\d+N|FB\d+N|PLTN|PRTN|PLBN|PRBN)$/i;
+
+  function getDoorCodeFromText(text){
+    const t = String(text || "").toLowerCase();
+
+    if (
+      t.includes("bisagra") ||
+      t.includes("barra") ||
+      t.includes("cierre") ||
+      t.includes("cerradura") ||
+      t.includes("manija") ||
+      t.includes("sello") ||
+      t.includes("empaque") ||
+      t.includes("friza") ||
+      t.includes("gasket") ||
+      t.includes("locking")
+    ) {
+      return "DH";
+    }
+
+    if (
+      t.includes("puerta derecha") ||
+      t.includes("hoja derecha") ||
+      t.includes("right door")
+    ) {
+      return "DR";
+    }
+
+    return "DP";
+  }
+
+  function fixDoorCodesInDom(){
+    const bodyText = String(document.body.innerText || "").toUpperCase();
+    if (!bodyText.includes("PUERTA")) return;
+
+    // Buscar tarjetas/bloques donde aparecen hallazgos
+    const possibleCards = Array.from(document.querySelectorAll("div, span"));
+
+    possibleCards.forEach(el => {
+      const txt = String(el.textContent || "").trim();
+
+      // Solo corregir etiquetas pequeñas de código, no textos largos
+      if (!txt || txt.length > 8) return;
+
+      const clean = txt.replace(/\s+/g, " ").trim();
+
+      if (BAD_DOOR_CODES.test(clean)) {
+        const card = el.closest("div") || el.parentElement || document.body;
+        const context = String((card.parentElement?.innerText || card.innerText || document.body.innerText || ""));
+        el.textContent = getDoorCodeFromText(context);
+      }
+    });
+
+    // También corregir directamente en arrays internos para EIR / resultados futuros
+    if (window.ST) {
+      const fixFinding = f => {
+        if (!f || typeof f !== "object") return f;
+
+        const faceTxt = String(f.faceName || f.face || f.cara || "").toLowerCase();
+        const desc = [
+          f.description,
+          f.descripcion,
+          f.damage_code,
+          f.cyra_location,
+          f.location,
+          f.component_code,
+          f.component_name,
+          f.component_label
+        ].join(" ");
+
+        // Si estamos en pantalla Puerta o el finding dice Puerta, forzar código
+        if (bodyText.includes("PUERTA") || faceTxt.includes("puerta") || faceTxt.includes("door")) {
+          const code = getDoorCodeFromText(desc);
+          f.faceName = "Puerta";
+          f.face = "Puerta";
+          f.cara = "Puerta";
+          f.cyra_location = code;
+          f.location = code;
+
+          if (!f.component_code || f.component_code === "-" || !f.component_label || f.component_label === "-") {
+            f.component_code = code === "DH" ? "LBR" : "DPL";
+            f.component_name = code === "DH" ? "Herraje / barra de puerta" : "Panel de puerta";
+            f.component_label = f.component_code + " - " + f.component_name;
+          }
+        }
+
+        return f;
+      };
+
+      if (Array.isArray(ST.findings)) {
+        ST.findings = ST.findings.map(fixFinding);
+      }
+
+      if (ST.faceFindings && typeof ST.faceFindings === "object") {
+        Object.keys(ST.faceFindings).forEach(k => {
+          if (Array.isArray(ST.faceFindings[k])) {
+            ST.faceFindings[k] = ST.faceFindings[k].map(fixFinding);
+          }
+        });
+      }
+    }
+  }
+
+  // Ejecutar después de cada render/click, sin romper login
+  document.addEventListener("click", function(){
+    setTimeout(fixDoorCodesInDom, 80);
+    setTimeout(fixDoorCodesInDom, 300);
+    setTimeout(fixDoorCodesInDom, 800);
+  }, true);
+
+  const observer = new MutationObserver(() => {
+    clearTimeout(window.__cyraDoorCodeTimer);
+    window.__cyraDoorCodeTimer = setTimeout(fixDoorCodesInDom, 120);
+  });
+
+  window.addEventListener("load", () => {
+    try {
+      observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    } catch(e){}
+    setTimeout(fixDoorCodesInDom, 500);
+  });
+
+  window.cyraFixDoorCodesInDom = fixDoorCodesInDom;
+})();
+
 </script>
 </body>
 </html>
