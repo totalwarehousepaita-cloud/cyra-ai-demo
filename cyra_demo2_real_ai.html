@@ -1079,7 +1079,14 @@ function renderView(vid){
 function renderFace(main,face){
   const img=ST.images[key(face.id)];
   const analyzed=ST.faceFindings[face.id]!==undefined;
-  const findings=analyzed?ST.faceFindings[face.id]:[];
+  let findings=analyzed?ST.faceFindings[face.id]:[];
+  if (face && String(face.name || "").toLowerCase().includes("puerta")) {
+    findings = cyraForceDoorUiArray(findings);
+    ST.faceFindings[face.id] = findings;
+    if (Array.isArray(ST.findings)) {
+      ST.findings = ST.findings.map(x => String(x.faceName || x.face || "").toLowerCase().includes("puerta") ? cyraForceDoorUiFinding(x) : x);
+    }
+  }
   const inv=ST.invalidFaces[face.id];
   const chipCls=img?'frdy':'fpend';
   const chipTxt=analyzed?'✓ ANALIZADO':img?'⚡ LISTO PARA IA':'⏳ SIN IMAGEN';
@@ -1324,6 +1331,17 @@ function renderAI(main){
 
 // ── RESULTS ──
 function renderResults(main){
+  if (window.ST && ST.faceFindings) {
+    Object.keys(ST.faceFindings).forEach(k => {
+      const faceObj = (typeof FACES !== "undefined" && Array.isArray(FACES)) ? FACES.find(f => f.id === k) : null;
+      if (faceObj && String(faceObj.name || "").toLowerCase().includes("puerta")) {
+        ST.faceFindings[k] = cyraForceDoorUiArray(ST.faceFindings[k]);
+      }
+    });
+    if (Array.isArray(ST.findings)) {
+      ST.findings = ST.findings.map(x => String(x.faceName || x.face || "").toLowerCase().includes("puerta") ? cyraForceDoorUiFinding(x) : x);
+    }
+  }
   if(!ST.processed && (!ST.findings || !ST.findings.length)){
     main.innerHTML=`<div class="fwrap"><div class="rcard" style="text-align:center;padding:36px"><div style="font-size:44px;margin-bottom:12px">🤖</div><div style="font-family:monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#5a9080">Sin resultados aún</div><div style="font-size:10px;color:#1e4838;margin-top:6px">Carga las imágenes y procesa la inspección IA</div></div></div>`;
     return;
@@ -1404,6 +1422,17 @@ function renderResults(main){
 
 // ── EIR ──
 function renderEIR(main){
+  if (window.ST && ST.faceFindings) {
+    Object.keys(ST.faceFindings).forEach(k => {
+      const faceObj = (typeof FACES !== "undefined" && Array.isArray(FACES)) ? FACES.find(f => f.id === k) : null;
+      if (faceObj && String(faceObj.name || "").toLowerCase().includes("puerta")) {
+        ST.faceFindings[k] = cyraForceDoorUiArray(ST.faceFindings[k]);
+      }
+    });
+    if (Array.isArray(ST.findings)) {
+      ST.findings = ST.findings.map(x => String(x.faceName || x.face || "").toLowerCase().includes("puerta") ? cyraForceDoorUiFinding(x) : x);
+    }
+  }
   if(!ST.processed){
     main.innerHTML=`<div class="fwrap"><div class="rcard" style="text-align:center;padding:36px"><div style="font-size:44px;margin-bottom:12px">📄</div><div style="font-family:monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#5a9080">Procesa la inspección para generar el EIR</div></div></div>`;
     return;
@@ -2142,6 +2171,95 @@ function cyraShortDesc(text, maxLen = 78) {
 
   window.cyraApplyContainer = applyContainer;
 })();
+
+
+/* === CYRA FORCE DOOR UI DP DR DH FIX === */
+function cyraForceDoorUiFinding(f) {
+  if (!f || typeof f !== "object") return f;
+
+  const txt = [
+    f.faceName,
+    f.face,
+    f.cara,
+    f.description,
+    f.descripcion,
+    f.damage_code,
+    f.cyra_location,
+    f.location,
+    f.component_code,
+    f.component_name,
+    f.component_label,
+    f.repair_method,
+    f.repair_method_name
+  ].join(" ").toLowerCase();
+
+  let code = "DP";
+  let compCode = "DPL";
+  let compName = "Panel de puerta";
+
+  if (
+    txt.includes("bisagra") ||
+    txt.includes("hinge") ||
+    txt.includes("barra") ||
+    txt.includes("cierre") ||
+    txt.includes("locking") ||
+    txt.includes("cerradura") ||
+    txt.includes("manija") ||
+    txt.includes("handle") ||
+    txt.includes("sello") ||
+    txt.includes("empaque") ||
+    txt.includes("friza") ||
+    txt.includes("gasket")
+  ) {
+    code = "DH";
+
+    if (txt.includes("bisagra") || txt.includes("hinge")) {
+      compCode = "HGA";
+      compName = "Bisagra completa";
+    } else if (txt.includes("barra") || txt.includes("cierre") || txt.includes("locking")) {
+      compCode = "LBR";
+      compName = "Barra de cierre de puerta";
+    } else if (txt.includes("cerradura")) {
+      compCode = "DHL";
+      compName = "Cerradura de puerta";
+    } else if (txt.includes("manija") || txt.includes("handle")) {
+      compCode = "LBH";
+      compName = "Manija de puerta";
+    } else if (txt.includes("sello") || txt.includes("empaque") || txt.includes("friza") || txt.includes("gasket")) {
+      compCode = "GTA";
+      compName = "Friza / empaque de puerta";
+    }
+  } else if (
+    txt.includes("puerta derecha") ||
+    txt.includes("hoja derecha") ||
+    txt.includes("right door") ||
+    txt.includes("derecha")
+  ) {
+    code = "DR";
+    compCode = "DPL";
+    compName = "Panel de puerta derecha";
+  } else {
+    code = "DP";
+    compCode = "DPL";
+    compName = "Panel de puerta";
+  }
+
+  f.faceName = "Puerta";
+  f.face = "Puerta";
+  f.cara = "Puerta";
+  f.cyra_location = code;
+  f.location = code;
+
+  f.component_code = compCode;
+  f.component_name = compName;
+  f.component_label = compCode + " - " + compName;
+
+  return f;
+}
+
+function cyraForceDoorUiArray(arr) {
+  return Array.isArray(arr) ? arr.map(cyraForceDoorUiFinding) : arr;
+}
 
 </script>
 </body>
