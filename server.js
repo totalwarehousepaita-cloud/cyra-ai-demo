@@ -791,7 +791,7 @@ app.post("/api/evaluar-contenedor", async (req, res) => {
       });
     }
 
-    const findings = Array.isArray(parsed.findings)
+    let findings = Array.isArray(parsed.findings)
       ? parsed.findings.map(sanitizeFinding).map(cyraValidateFindingByFace).map(cyraNormalizeComponentFields).map(cyraValidateFindingByFace).map(cyraFinalDoorFix)
       : [];
 
