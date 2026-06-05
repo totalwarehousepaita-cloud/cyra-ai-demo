@@ -12,10 +12,6 @@ const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
 const DEMO_USER = process.env.DEMO_USER || "cyra";
 const DEMO_PASSWORD = process.env.DEMO_PASSWORD || "CyraDemo2026!";
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  console.warn("ADVERTENCIA: falta ANTHROPIC_API_KEY en variables de entorno.");
-}
-
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
 });
@@ -24,9 +20,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.use(cors());
-app.use(express.json({ limit: "25mb" }));
-app.use(express.urlencoded({ extended: true, limit: "25mb" }));
-
+app.use(express.json({ limit: "35mb" }));
+app.use(express.urlencoded({ extended: true, limit: "35mb" }));
 app.use(express.static(__dirname));
 
 app.get("/", (req, res) => {
@@ -36,13 +31,13 @@ app.get("/", (req, res) => {
 app.get("/api/health", (req, res) => {
   res.json({
     ok: true,
-    service: "CYRA AI",
+    service: "CYRA AI Evaluator",
     model: MODEL
   });
 });
 
 app.post("/api/login", (req, res) => {
-  const { user, password, username } = req.body || {};
+  const { user, username, password } = req.body || {};
   const inputUser = user || username || "";
 
   if (inputUser === DEMO_USER && password === DEMO_PASSWORD) {
@@ -55,10 +50,56 @@ app.post("/api/login", (req, res) => {
   });
 });
 
-function cleanBase64(value) {
-  const raw = String(value || "");
-  if (raw.includes(",")) return raw.split(",").pop();
-  return raw;
+function parseImagePayload(body = {}) {
+  const raw =
+    body.image_base64 ||
+    body.image ||
+    body.base64 ||
+    body.data ||
+    body.dataUrl ||
+    "";
+
+  let value = String(raw || "");
+  let mediaType =
+    body.media_type ||
+    body.image_type ||
+    body.mime ||
+    body.type ||
+    "";
+
+  const dataUrlMatch = value.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.*)$/);
+
+  if (dataUrlMatch) {
+    mediaType = dataUrlMatch[1];
+    value = dataUrlMatch[2];
+  } else if (value.includes(",")) {
+    value = value.split(",").pop();
+  }
+
+  mediaType = String(mediaType || "").toLowerCase().trim();
+
+  if (mediaType === "image/jpg") {
+    mediaType = "image/jpeg";
+  }
+
+  if (!mediaType) {
+    if (value.startsWith("/9j/")) {
+      mediaType = "image/jpeg";
+    } else if (value.startsWith("iVBOR")) {
+      mediaType = "image/png";
+    } else if (value.startsWith("UklGR")) {
+      mediaType = "image/webp";
+    } else if (value.startsWith("R0lGOD")) {
+      mediaType = "image/gif";
+    } else {
+      mediaType = "image/jpeg";
+    }
+  }
+
+  return {
+    imageBase64: value,
+    mediaType
+  };
 }
 
 function normalizeContainerId(value) {
@@ -83,6 +124,7 @@ function extractJsonLoose(text) {
     return JSON.parse(raw);
   } catch (_) {
     const match = raw.match(/\{[\s\S]*\}/);
+
     if (!match) {
       throw new Error("CYRA AI no devolvió JSON válido.");
     }
@@ -99,8 +141,33 @@ function safeString(value, fallback = "") {
 function normalizeSeverity(value) {
   const v = safeString(value, "Media").toLowerCase();
 
-  if (v.includes("alta") || v.includes("severa") || v.includes("grave")) return "Alta";
-  if (v.includes("baja") || v.includes("leve") || v.includes("menor")) return "Baja";
+  if (
+    v.includes("critica") ||
+    v.includes("crítica") ||
+    v.includes("critical")
+  ) {
+    return "Crítica";
+  }
+
+  if (
+    v.includes("alta") ||
+    v.includes("alto") ||
+    v.includes("severa") ||
+    v.includes("grave") ||
+    v.includes("high")
+  ) {
+    return "Alta";
+  }
+
+  if (
+    v.includes("baja") ||
+    v.includes("leve") ||
+    v.includes("menor") ||
+    v.includes("low")
+  ) {
+    return "Baja";
+  }
+
   return "Media";
 }
 
@@ -108,7 +175,11 @@ function sanitizeFinding(finding = {}) {
   const f = { ...finding };
 
   const faceName = safeString(
-    f.faceName || f.face || f.cara || f.side || f.view,
+    f.faceName ||
+      f.face ||
+      f.cara ||
+      f.side ||
+      f.view,
     "No identificado"
   );
 
@@ -122,12 +193,18 @@ function sanitizeFinding(finding = {}) {
   ).toUpperCase();
 
   const damageCode = safeString(
-    f.damage_code || f.damage || f.codigo_dano || f.codigo_daño,
+    f.damage_code ||
+      f.damage ||
+      f.codigo_dano ||
+      f.codigo_daño,
     "-"
   ).toUpperCase();
 
   const description = safeString(
-    f.description || f.descripcion || f.observacion || f.observation,
+    f.description ||
+      f.descripcion ||
+      f.observacion ||
+      f.observation,
     "Hallazgo detectado por CYRA AI."
   );
 
@@ -150,7 +227,8 @@ function sanitizeFinding(finding = {}) {
   );
 
   const repairMethodCode = safeString(
-    f.repair_method_code || f.repair_code,
+    f.repair_method_code ||
+      f.repair_code,
     ""
   ).toUpperCase();
 
@@ -179,11 +257,20 @@ function sanitizeFinding(finding = {}) {
     component_label: componentLabel,
     description,
     severity: normalizeSeverity(f.severity || f.severidad),
-    dimensions_mm: safeString(f.dimensions_mm || f.dimensions || f.dimension, "-"),
+    dimensions_mm: safeString(
+      f.dimensions_mm ||
+        f.dimensions ||
+        f.dimension,
+      "-"
+    ),
     repair_method_code: repairMethodCode,
     repair_method_name: repairMethodName,
     repair_method: repairMethodName || repairMethodCode || safeString(f.repair_method, "-"),
     confidence: Number.isFinite(Number(f.confidence)) ? Number(f.confidence) : 0.85,
+    bbox_x: Number.isFinite(Number(f.bbox_x)) ? Number(f.bbox_x) : undefined,
+    bbox_y: Number.isFinite(Number(f.bbox_y)) ? Number(f.bbox_y) : undefined,
+    bbox_w: Number.isFinite(Number(f.bbox_w)) ? Number(f.bbox_w) : undefined,
+    bbox_h: Number.isFinite(Number(f.bbox_h)) ? Number(f.bbox_h) : undefined,
     bbox: f.bbox || f.bounding_box || null
   };
 }
@@ -220,7 +307,10 @@ function isDoorRequest(body, finding) {
 
 function forceDoorCodesDPDRDH(finding, body) {
   if (!finding || typeof finding !== "object") return finding;
-  if (!isDoorRequest(body, finding)) return finding;
+
+  if (!isDoorRequest(body, finding)) {
+    return finding;
+  }
 
   const text = [
     finding.description,
@@ -371,7 +461,10 @@ FORMATO JSON OBLIGATORIO:
       "repair_method_name": "",
       "repair_method": "",
       "confidence": 0.85,
-      "bbox": null
+      "bbox_x": 0.1,
+      "bbox_y": 0.1,
+      "bbox_w": 0.2,
+      "bbox_h": 0.2
     }
   ]
 }
@@ -382,13 +475,13 @@ app.post("/api/evaluar-contenedor", async (req, res) => {
   try {
     const body = req.body || {};
 
-    const imageBase64 = cleanBase64(
-      body.image_base64 ||
-        body.image ||
-        body.base64 ||
-        body.data ||
-        body.dataUrl
-    );
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(500).json({
+        error: "Falta configurar ANTHROPIC_API_KEY en Render."
+      });
+    }
+
+    const { imageBase64, mediaType } = parseImagePayload(body);
 
     if (!imageBase64) {
       return res.status(400).json({
@@ -396,8 +489,7 @@ app.post("/api/evaluar-contenedor", async (req, res) => {
       });
     }
 
-    const mediaType = body.media_type || body.mime || "image/jpeg";
-    const allowedMedia = ["image/jpeg", "image/png", "image/webp"];
+    const allowedMedia = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
     if (!allowedMedia.includes(mediaType)) {
       return res.status(400).json({
@@ -424,34 +516,34 @@ app.post("/api/evaluar-contenedor", async (req, res) => {
           role: "user",
           content: [
             {
-              type: "text",
-              text: prompt
-            },
-            {
               type: "image",
               source: {
                 type: "base64",
                 media_type: mediaType,
                 data: imageBase64
               }
+            },
+            {
+              type: "text",
+              text: prompt
             }
           ]
         }
       ]
     });
 
-    const text = message.content
+    const responseText = message.content
       .filter((item) => item.type === "text")
       .map((item) => item.text)
       .join("\n");
 
-    const parsed = extractJsonLoose(text);
+    const parsed = extractJsonLoose(responseText);
 
     parsed.container_id_detected =
       normalizeContainerId(parsed.container_id_detected) ||
       normalizeContainerId(parsed.container_id) ||
       normalizeContainerId(parsed.contenedor) ||
-      findContainerIdInText(text) ||
+      findContainerIdInText(responseText) ||
       "";
 
     let findings = Array.isArray(parsed.findings)
