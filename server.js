@@ -450,7 +450,7 @@ function sanitizeFinding(f) {
   const c = Number(out.confidence);
   out.confidence = Number.isFinite(c) ? Math.min(1, Math.max(0, c)) : 0.85;
 
-  out.description = String(out.description || "").slice(0, 500);
+  out.description = shortenDescription(out.description, 82);
   out.location_detail = String(out.location_detail || "").slice(0, 250);
   out.dimensions_mm = String(out.dimensions_mm || "No estimado").slice(0, 80);
   out.observations = String(out.observations || "").slice(0, 500);
