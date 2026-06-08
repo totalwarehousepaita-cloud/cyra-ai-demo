@@ -406,40 +406,107 @@ function inferComponent(f, body) {
 
   return { code: "PAA", name: "Panel corrugado" };
 }
-function shortenDescription(text, max = 52) {
+function shortenDescription(text, max = 60, finding = {}) {
+  const damage = String(finding.damage_code || "").toUpperCase();
+
   let s = String(text || "")
     .replace(/\s+/g, " ")
     .trim();
 
+  const lower = s.toLowerCase();
+
+  // Descripciones controladas por tipo de daño
+  if (damage === "DT") {
+    if (lower.includes("sever") || lower.includes("profund")) {
+      return "Abolladura severa en panel";
+    }
+    if (lower.includes("menor") || lower.includes("leve")) {
+      return "Abolladuras menores en panel";
+    }
+    return "Abolladuras visibles en panel";
+  }
+
+  if (damage === "CO") {
+    if (lower.includes("óxido") || lower.includes("oxido")) {
+      return "Corrosión con óxido activo";
+    }
+    if (lower.includes("pintura")) {
+      return "Corrosión con pérdida de pintura";
+    }
+    return "Corrosión superficial visible";
+  }
+
+  if (damage === "DL") {
+    return "Delaminación de pintura en panel";
+  }
+
+  if (damage === "BT") {
+    return "Panel doblado o deformado";
+  }
+
+  if (damage === "GD") {
+    return "Rasguños visibles en panel";
+  }
+
+  if (damage === "IR") {
+    return "Reparación impropia visible";
+  }
+
+  if (damage === "ML") {
+    return "Marcas o adhesivos visibles";
+  }
+
+  if (damage === "DY") {
+    return "Suciedad visible en superficie";
+  }
+
+  if (damage === "WT") {
+    return "Desgaste superficial visible";
+  }
+
+  if (damage === "HO") {
+    return "Agujero visible en panel";
+  }
+
+  if (damage === "CK") {
+    return "Grieta visible en panel";
+  }
+
+  if (damage === "MS") {
+    return "Componente faltante visible";
+  }
+
+  if (damage === "OF") {
+    return "Hallazgo fuera de estándar";
+  }
+
+  // Limpieza general si llega otro texto
   s = s
     .replace(/abolladuras múltiples de gran extensión/gi, "Abolladuras extensas")
-    .replace(/abolladuras múltiples/gi, "Abolladuras múltiples")
-    .replace(/abolladura severa múltiple/gi, "Abolladura severa")
+    .replace(/abolladuras múltiples severas/gi, "Abolladuras severas")
     .replace(/corrosión generalizada con presencia de óxido activo/gi, "Corrosión con óxido activo")
-    .replace(/corrosión superficial generalizada/gi, "Corrosión superficial")
-    .replace(/corrosión generalizada/gi, "Corrosión generalizada")
+    .replace(/corrosión activa en zonas con pintura desprendida/gi, "Corrosión con pintura desprendida")
     .replace(/delaminación y levantamiento severo del acero/gi, "Delaminación severa")
-    .replace(/delaminación y desprendimiento de pintura/gi, "Delaminación de pintura")
-    .replace(/rasguños y marcas de rozamiento profundas/gi, "Rasguños profundos")
-    .replace(/rasguños y marcas de impacto/gi, "Rasguños e impactos")
-    .replace(/reparación impropia en zona central-baja/gi, "Reparación impropia central-baja")
-    .replace(/con pérdida significativa de pintura/gi, "con pérdida de pintura")
-    .replace(/con desprendimiento de pintura/gi, "con pintura desprendida")
-    .replace(/en panel, mitad inferior del lateral derecho/gi, "en zona inferior derecha")
-    .replace(/en mitad inferior del panel lateral derecho/gi, "en zona inferior derecha")
-    .replace(/del lateral derecho/gi, "lado derecho")
-    .replace(/del lateral izquierdo/gi, "lado izquierdo")
-    .replace(/panel corrugado/gi, "panel")
-    .replace(/distribuidas en/gi, "en")
-    .replace(/visible en/gi, "en");
+    .replace(/se observa una zona central con apariencia de/gi, "Reparación impropia visible")
+    .replace(/en mitad inferior del lateral derecho/gi, "")
+    .replace(/en la mitad superior/gi, "")
+    .replace(/en panel/gi, "")
+    .replace(/del panel/gi, "")
+    .trim();
 
   if (s.length <= max) return s;
 
-  const cut = s.slice(0, max);
-  const lastSpace = cut.lastIndexOf(" ");
+  // Corte seguro: no deja palabras a medias ni puntos suspensivos
+  const words = s.split(" ");
+  let result = "";
 
-  // Importante: sin puntos suspensivos
-  return (lastSpace > 30 ? cut.slice(0, lastSpace) : cut).trim();
+  for (const word of words) {
+    const next = result ? `${result} ${word}` : word;
+    if (next.length > max) break;
+    result = next;
+  }
+
+  return result || "Hallazgo visible en contenedor";
 }
 function sanitizeFinding(f) {
   const out = { ...f };
@@ -461,7 +528,7 @@ function sanitizeFinding(f) {
   const c = Number(out.confidence);
   out.confidence = Number.isFinite(c) ? Math.min(1, Math.max(0, c)) : 0.85;
 
-  out.description = shortenDescription(out.description, 52);
+  out.description = shortenDescription(out.description, 60, out);
   out.location_detail = String(out.location_detail || "").slice(0, 250);
   out.dimensions_mm = String(out.dimensions_mm || "No estimado").slice(0, 80);
   out.observations = String(out.observations || "").slice(0, 500);
