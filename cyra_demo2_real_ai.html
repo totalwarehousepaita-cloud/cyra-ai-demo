@@ -1752,5 +1752,112 @@ document.addEventListener("click", function() {
   });
 })();
 </script>
+  <script>
+/* === CYRA CONTAINER ID LIGHT FIX === */
+(function () {
+  if (window.__cyraContainerLightFix) return;
+  window.__cyraContainerLightFix = true;
+
+  function normalizeContainerId(value) {
+    const clean = String(value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .trim();
+
+    return /^[A-Z]{4}\d{7}$/.test(clean) ? clean : "";
+  }
+
+  function applyContainerId(code) {
+    const id = normalizeContainerId(code);
+    if (!id) return;
+
+    window.CYRA_CONTAINER_ID_DETECTED = id;
+
+    try {
+      if (window.ST) {
+        window.ST.containerId = id;
+        window.ST.container = id;
+        window.ST.container_id = id;
+        window.ST.container_id_detected = id;
+      }
+    } catch (_) {}
+
+    // Actualiza solo elementos conocidos, no toda la página
+    const ids = [
+      "hcode",
+      "containerId",
+      "container",
+      "container_id",
+      "containerCode"
+    ];
+
+    ids.forEach(domId => {
+      const el = document.getElementById(domId);
+      if (!el) return;
+
+      if ("value" in el) {
+        el.value = id;
+      } else {
+        el.textContent = id;
+      }
+    });
+
+    // Actualiza badges visibles que dicen PENDIENTE, pero de forma limitada
+    document.querySelectorAll("#hcode, .ccode, .container-code, .eiriv, .eirv").forEach(el => {
+      const txt = (el.textContent || "").trim();
+
+      if (
+        txt === "PENDIENTE" ||
+        txt === "CONTENEDOR_VISIBLE" ||
+        txt.startsWith("CYRA-EXT-")
+      ) {
+        el.textContent = id;
+      }
+    });
+  }
+
+  const originalFetch = window.fetch;
+
+  window.fetch = async function () {
+    const response = await originalFetch.apply(this, arguments);
+
+    try {
+      const url = String(arguments[0] || "");
+
+      if (url.includes("/api/evaluar-contenedor")) {
+        response.clone().json().then(data => {
+          const mainCode =
+            data.container_id_detected ||
+            data.container_id ||
+            data.contenedor ||
+            "";
+
+          if (mainCode) {
+            applyContainerId(mainCode);
+            return;
+          }
+
+          if (Array.isArray(data.findings)) {
+            for (const f of data.findings) {
+              const code =
+                f.container_id_detected ||
+                f.container_id ||
+                f.contenedor ||
+                "";
+
+              if (code) {
+                applyContainerId(code);
+                break;
+              }
+            }
+          }
+        }).catch(() => {});
+      }
+    } catch (_) {}
+
+    return response;
+  };
+})();
+</script>
 </body>
 </html>
