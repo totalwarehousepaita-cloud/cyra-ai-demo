@@ -406,36 +406,40 @@ function inferComponent(f, body) {
 
   return { code: "PAA", name: "Panel corrugado" };
 }
-function shortenDescription(text, max = 58) {
+function shortenDescription(text, max = 52) {
   let s = String(text || "")
     .replace(/\s+/g, " ")
     .trim();
 
   s = s
-    .replace(/de severidad media a alta/gi, "media-alta")
-    .replace(/de severidad alta/gi, "severa")
+    .replace(/abolladuras múltiples de gran extensión/gi, "Abolladuras extensas")
+    .replace(/abolladuras múltiples/gi, "Abolladuras múltiples")
+    .replace(/abolladura severa múltiple/gi, "Abolladura severa")
+    .replace(/corrosión generalizada con presencia de óxido activo/gi, "Corrosión con óxido activo")
+    .replace(/corrosión superficial generalizada/gi, "Corrosión superficial")
+    .replace(/corrosión generalizada/gi, "Corrosión generalizada")
+    .replace(/delaminación y levantamiento severo del acero/gi, "Delaminación severa")
+    .replace(/delaminación y desprendimiento de pintura/gi, "Delaminación de pintura")
+    .replace(/rasguños y marcas de rozamiento profundas/gi, "Rasguños profundos")
+    .replace(/rasguños y marcas de impacto/gi, "Rasguños e impactos")
+    .replace(/reparación impropia en zona central-baja/gi, "Reparación impropia central-baja")
     .replace(/con pérdida significativa de pintura/gi, "con pérdida de pintura")
-    .replace(/con pérdida extensa de pintura/gi, "con pérdida de pintura")
-    .replace(/en la mitad inferior/gi, "en zona inferior")
-    .replace(/mitad inferior del lateral derecho/gi, "zona inferior derecha")
+    .replace(/con desprendimiento de pintura/gi, "con pintura desprendida")
+    .replace(/en panel, mitad inferior del lateral derecho/gi, "en zona inferior derecha")
+    .replace(/en mitad inferior del panel lateral derecho/gi, "en zona inferior derecha")
     .replace(/del lateral derecho/gi, "lado derecho")
     .replace(/del lateral izquierdo/gi, "lado izquierdo")
     .replace(/panel corrugado/gi, "panel")
-    .replace(/corrosión superficial generalizada/gi, "Corrosión generalizada")
-    .replace(/corrosión generalizada con pérdida de pintura/gi, "Corrosión con pérdida de pintura")
-    .replace(/abolladuras múltiples/gi, "Abolladuras múltiples")
-    .replace(/abolladura severa múltiple/gi, "Abolladura severa")
-    .replace(/delaminación y desprendimiento de pintura/gi, "Delaminación de pintura")
-    .replace(/desprendimiento severo de la capa de pintura/gi, "desprendimiento de pintura")
-    .replace(/visible en/gi, "en")
-    .replace(/distribuidas en/gi, "en");
+    .replace(/distribuidas en/gi, "en")
+    .replace(/visible en/gi, "en");
 
   if (s.length <= max) return s;
 
   const cut = s.slice(0, max);
   const lastSpace = cut.lastIndexOf(" ");
 
-  return (lastSpace > 35 ? cut.slice(0, lastSpace) : cut).trim() + "...";
+  // Importante: sin puntos suspensivos
+  return (lastSpace > 30 ? cut.slice(0, lastSpace) : cut).trim();
 }
 function sanitizeFinding(f) {
   const out = { ...f };
@@ -457,7 +461,7 @@ function sanitizeFinding(f) {
   const c = Number(out.confidence);
   out.confidence = Number.isFinite(c) ? Math.min(1, Math.max(0, c)) : 0.85;
 
-  out.description = shortenDescription(out.description, 58);
+  out.description = shortenDescription(out.description, 52);
   out.location_detail = String(out.location_detail || "").slice(0, 250);
   out.dimensions_mm = String(out.dimensions_mm || "No estimado").slice(0, 80);
   out.observations = String(out.observations || "").slice(0, 500);
