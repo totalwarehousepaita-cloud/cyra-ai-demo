@@ -406,7 +406,30 @@ function inferComponent(f, body) {
 
   return { code: "PAA", name: "Panel corrugado" };
 }
+function shortenDescription(text, max = 82) {
+  let s = String(text || "")
+    .replace(/\s+/g, " ")
+    .trim();
 
+  // Limpieza de frases largas comunes
+  s = s
+    .replace(/de severidad media a alta/gi, "media-alta")
+    .replace(/con pérdida significativa de pintura/gi, "con pérdida de pintura")
+    .replace(/con pérdida extensa de pintura/gi, "con pérdida de pintura")
+    .replace(/distribuidas en la mitad inferior/gi, "en mitad inferior")
+    .replace(/corrosión superficial generalizada/gi, "Corrosión generalizada")
+    .replace(/abolladuras múltiples/gi, "Abolladuras múltiples")
+    .replace(/delaminación y desprendimiento severo/gi, "Delaminación severa")
+    .replace(/panel corrugado/gi, "panel")
+    .replace(/tratamiento anticorrosivo/gi, "anticorrosivo");
+
+  if (s.length <= max) return s;
+
+  const cut = s.slice(0, max);
+  const lastSpace = cut.lastIndexOf(" ");
+
+  return (lastSpace > 45 ? cut.slice(0, lastSpace) : cut).trim() + "...";
+}
 function sanitizeFinding(f) {
   const out = { ...f };
 
