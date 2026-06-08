@@ -1716,5 +1716,41 @@ document.addEventListener("click", function() {
 })();
 
 </script>
+  <script>
+/* === CYRA HIDE BOTTOM PHOTO EVIDENCE GALLERY === */
+(function () {
+  function hideEvidenceGallery() {
+    const all = Array.from(document.querySelectorAll("div, section, h1, h2, h3, h4, p, span"));
+
+    all.forEach(el => {
+      const txt = (el.textContent || "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toUpperCase();
+
+      if (txt === "EVIDENCIA FOTOGRÁFICA" || txt === "EVIDENCIA FOTOGRAFICA") {
+        const gallery = el.nextElementSibling;
+
+        el.style.display = "none";
+
+        if (gallery) {
+          gallery.style.display = "none";
+        }
+      }
+    });
+  }
+
+  hideEvidenceGallery();
+
+  const observer = new MutationObserver(() => {
+    hideEvidenceGallery();
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+})();
+</script>
 </body>
 </html>
