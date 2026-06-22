@@ -1716,5 +1716,285 @@ document.addEventListener("click", function() {
 })();
 
 </script>
+<!-- === CYRA SIDEBAR INTERNAL / EXTERNAL MODULES START === -->
+<style>
+  .cyra-sidebar-module-title{
+    width:calc(100% - 16px);
+    border:1px solid rgba(0,180,240,.22);
+    background:rgba(0,180,240,.08);
+    color:#dff7ff;
+    border-radius:12px;
+    padding:10px 12px;
+    margin:8px 8px 6px 8px;
+    cursor:pointer;
+    font-weight:900;
+    font-size:11px;
+    letter-spacing:.7px;
+    text-transform:uppercase;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+  }
+
+  .cyra-sidebar-module-title span{
+    color:#00d2ff;
+  }
+
+  .cyra-sidebar-module-body{
+    display:none;
+    padding:0 0 8px 0;
+  }
+
+  .cyra-sidebar-module-body.on{
+    display:block;
+  }
+
+  .cyra-sidebar-internal-btn{
+    width:calc(100% - 16px);
+    margin:4px 8px 8px 8px;
+    border:1px solid rgba(0,210,255,.28);
+    background:linear-gradient(135deg,rgba(0,180,240,.14),rgba(0,210,255,.08));
+    color:#e8f8ff;
+    border-radius:12px;
+    padding:11px 12px;
+    cursor:pointer;
+    text-align:left;
+    font-weight:800;
+    font-size:11px;
+    letter-spacing:.5px;
+    text-transform:uppercase;
+  }
+
+  .cyra-sidebar-internal-btn:hover{
+    border-color:#00d2ff;
+    background:rgba(0,180,240,.16);
+  }
+
+  .cyra-internal-embed-panel{
+    display:none;
+    position:fixed;
+    top:52px;
+    left:212px;
+    right:0;
+    bottom:0;
+    z-index:5000;
+    background:#030a0f;
+    border-left:1px solid rgba(0,180,240,.18);
+  }
+
+  .cyra-internal-embed-panel.on{
+    display:flex;
+    flex-direction:column;
+  }
+
+  .cyra-internal-embed-head{
+    min-height:52px;
+    height:52px;
+    background:rgba(6,16,24,.98);
+    border-bottom:1px solid rgba(0,180,240,.22);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:0 16px;
+    color:#e8f8ff;
+  }
+
+  .cyra-internal-embed-title{
+    font-size:13px;
+    font-weight:900;
+    letter-spacing:1px;
+    color:#00d2ff;
+    text-transform:uppercase;
+  }
+
+  .cyra-internal-embed-sub{
+    font-size:10px;
+    color:#91b7c7;
+    margin-top:2px;
+  }
+
+  .cyra-internal-embed-close{
+    border:1px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.05);
+    color:#e8f8ff;
+    border-radius:10px;
+    padding:8px 12px;
+    font-weight:800;
+    cursor:pointer;
+  }
+
+  .cyra-internal-embed-frame{
+    width:100%;
+    height:calc(100vh - 104px);
+    border:0;
+    background:#030a0f;
+  }
+
+  body.cyra-showing-internal .main,
+  body.cyra-showing-internal main{
+    visibility:hidden;
+  }
+
+  @media(max-width:860px){
+    .cyra-internal-embed-panel{
+      top:52px;
+      left:48px;
+    }
+
+    .cyra-sidebar-module-title{
+      width:38px;
+      height:38px;
+      padding:0;
+      justify-content:center;
+      font-size:0;
+    }
+
+    .cyra-sidebar-module-title span{
+      font-size:16px;
+    }
+
+    .cyra-sidebar-internal-btn{
+      width:38px;
+      height:38px;
+      padding:0;
+      font-size:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .cyra-sidebar-internal-btn::before{
+      content:"📋";
+      font-size:16px;
+    }
+  }
+</style>
+
+<div id="cyra-internal-embed-panel" class="cyra-internal-embed-panel">
+  <div class="cyra-internal-embed-head">
+    <div>
+      <div class="cyra-internal-embed-title">Inspección interna manual</div>
+      <div class="cyra-internal-embed-sub">Registro manual por ubicación, daño, componente, reparación, severidad y evidencia</div>
+    </div>
+
+    <button id="cyra-back-external" class="cyra-internal-embed-close" type="button">
+      Volver a inspección externa
+    </button>
+  </div>
+
+  <iframe
+    id="cyra-internal-embed-frame"
+    class="cyra-internal-embed-frame"
+    src="cyra_interna.html"
+    title="CYRA Inspección Interna">
+  </iframe>
+</div>
+
+<script>
+/* === CYRA SIDEBAR INTERNAL / EXTERNAL MODULES LOGIC === */
+(function(){
+  if(window.__cyraSidebarInternalExternalReady) return;
+  window.__cyraSidebarInternalExternalReady = true;
+
+  function ready(fn){
+    if(document.readyState === "loading"){
+      document.addEventListener("DOMContentLoaded", fn);
+    }else{
+      fn();
+    }
+  }
+
+  ready(function(){
+    const sidebar =
+      document.querySelector(".side") ||
+      document.querySelector("nav.side") ||
+      document.querySelector("aside") ||
+      document.querySelector("[class*='sidebar']");
+
+    if(!sidebar) {
+      console.warn("CYRA: no se encontró barra izquierda.");
+      return;
+    }
+
+    if(sidebar.querySelector(".cyra-sidebar-module-title")){
+      return;
+    }
+
+    const oldChildren = Array.from(sidebar.children);
+
+    const externalTitle = document.createElement("button");
+    externalTitle.type = "button";
+    externalTitle.className = "cyra-sidebar-module-title";
+    externalTitle.innerHTML = "<span>📷</span><b>Inspección externa</b><small>▾</small>";
+
+    const externalBody = document.createElement("div");
+    externalBody.className = "cyra-sidebar-module-body on";
+
+    oldChildren.forEach(function(child){
+      externalBody.appendChild(child);
+    });
+
+    const internalTitle = document.createElement("button");
+    internalTitle.type = "button";
+    internalTitle.className = "cyra-sidebar-module-title";
+    internalTitle.innerHTML = "<span>📋</span><b>Inspección interna</b><small>▸</small>";
+
+    const internalBody = document.createElement("div");
+    internalBody.className = "cyra-sidebar-module-body";
+
+    const internalBtn = document.createElement("button");
+    internalBtn.type = "button";
+    internalBtn.className = "cyra-sidebar-internal-btn";
+    internalBtn.textContent = "Abrir inspección interna";
+
+    internalBody.appendChild(internalBtn);
+
+    sidebar.appendChild(externalTitle);
+    sidebar.appendChild(externalBody);
+    sidebar.appendChild(internalTitle);
+    sidebar.appendChild(internalBody);
+
+    const internalPanel = document.getElementById("cyra-internal-embed-panel");
+    const backBtn = document.getElementById("cyra-back-external");
+
+    function openExternalGroup(){
+      externalBody.classList.add("on");
+      internalBody.classList.remove("on");
+      externalTitle.querySelector("small").textContent = "▾";
+      internalTitle.querySelector("small").textContent = "▸";
+    }
+
+    function openInternalGroup(){
+      internalBody.classList.add("on");
+      externalBody.classList.remove("on");
+      internalTitle.querySelector("small").textContent = "▾";
+      externalTitle.querySelector("small").textContent = "▸";
+    }
+
+    function showInternal(){
+      openInternalGroup();
+      document.body.classList.add("cyra-showing-internal");
+      if(internalPanel) internalPanel.classList.add("on");
+    }
+
+    function showExternal(){
+      openExternalGroup();
+      document.body.classList.remove("cyra-showing-internal");
+      if(internalPanel) internalPanel.classList.remove("on");
+    }
+
+    externalTitle.addEventListener("click", showExternal);
+    internalTitle.addEventListener("click", openInternalGroup);
+    internalBtn.addEventListener("click", showInternal);
+
+    if(backBtn){
+      backBtn.addEventListener("click", showExternal);
+    }
+  });
+})();
+</script>
+<!-- === CYRA SIDEBAR INTERNAL / EXTERNAL MODULES END === -->
 </body>
 </html>
