@@ -1859,5 +1859,256 @@ document.addEventListener("click", function() {
   };
 })();
 </script>
+<!-- === CYRA INSPECTION MODULES START === -->
+<style>
+  .cyra-module-switcher{
+    position:fixed;
+    top:14px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:9998;
+    display:flex;
+    gap:8px;
+    padding:8px;
+    border:1px solid rgba(0,180,240,.28);
+    border-radius:999px;
+    background:rgba(3,10,18,.88);
+    backdrop-filter:blur(14px);
+    box-shadow:0 12px 40px rgba(0,0,0,.35);
+  }
+
+  .cyra-module-btn{
+    border:1px solid rgba(0,180,240,.22);
+    background:rgba(255,255,255,.04);
+    color:#dff7ff;
+    border-radius:999px;
+    padding:8px 14px;
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.6px;
+    cursor:pointer;
+    text-transform:uppercase;
+  }
+
+  .cyra-module-btn.active{
+    background:linear-gradient(135deg,#00b4f0,#00d2ff);
+    color:#021018;
+    border-color:#00d2ff;
+  }
+
+  .cyra-module-panel{
+    display:none;
+    position:fixed;
+    inset:78px 18px 18px 18px;
+    z-index:9997;
+    overflow:auto;
+    border:1px solid rgba(0,180,240,.28);
+    border-radius:22px;
+    background:linear-gradient(135deg,rgba(3,10,18,.98),rgba(5,20,32,.98));
+    box-shadow:0 24px 80px rgba(0,0,0,.55);
+    padding:22px;
+    color:#e8f8ff;
+  }
+
+  .cyra-module-panel.on{
+    display:block;
+  }
+
+  .cyra-panel-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    border-bottom:1px solid rgba(0,180,240,.18);
+    padding-bottom:16px;
+    margin-bottom:18px;
+  }
+
+  .cyra-panel-title{
+    font-size:22px;
+    font-weight:900;
+    letter-spacing:.8px;
+    text-transform:uppercase;
+    color:#00d2ff;
+  }
+
+  .cyra-panel-sub{
+    margin-top:4px;
+    font-size:13px;
+    color:#91b7c7;
+    max-width:760px;
+    line-height:1.45;
+  }
+
+  .cyra-close-panel{
+    border:1px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.05);
+    color:#e8f8ff;
+    border-radius:12px;
+    padding:9px 13px;
+    cursor:pointer;
+    font-weight:800;
+  }
+
+  .cyra-internal-grid{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:14px;
+  }
+
+  .cyra-zone-card{
+    border:1px solid rgba(0,180,240,.2);
+    border-radius:18px;
+    padding:18px;
+    background:rgba(255,255,255,.035);
+  }
+
+  .cyra-zone-card h3{
+    margin:0 0 8px 0;
+    color:#ffffff;
+    font-size:16px;
+  }
+
+  .cyra-zone-card p{
+    margin:0;
+    color:#91b7c7;
+    font-size:13px;
+    line-height:1.45;
+  }
+
+  .cyra-empty-state{
+    border:1px dashed rgba(0,180,240,.32);
+    border-radius:18px;
+    padding:18px;
+    color:#91b7c7;
+    background:rgba(0,180,240,.045);
+    line-height:1.5;
+  }
+
+  @media(max-width:850px){
+    .cyra-module-switcher{
+      left:10px;
+      right:10px;
+      transform:none;
+      justify-content:center;
+      flex-wrap:wrap;
+      border-radius:18px;
+    }
+
+    .cyra-module-btn{
+      flex:1;
+      min-width:120px;
+      padding:8px 10px;
+      font-size:11px;
+    }
+
+    .cyra-module-panel{
+      inset:96px 10px 10px 10px;
+      padding:16px;
+      border-radius:18px;
+    }
+
+    .cyra-internal-grid{
+      grid-template-columns:1fr;
+    }
+  }
+</style>
+
+<div class="cyra-module-switcher">
+  <button class="cyra-module-btn active" type="button" data-cyra-module="external">Externa IA</button>
+  <button class="cyra-module-btn" type="button" data-cyra-module="internal">Interna manual</button>
+  <button class="cyra-module-btn" type="button" data-cyra-module="validation">Validación CYRA</button>
+</div>
+
+<section id="cyra-internal-panel" class="cyra-module-panel">
+  <div class="cyra-panel-head">
+    <div>
+      <div class="cyra-panel-title">Inspección interna manual</div>
+      <div class="cyra-panel-sub">
+        Módulo manual para registrar daños internos por ubicación, componente, código de daño, severidad, reparación, medidas, observaciones y evidencia.
+      </div>
+    </div>
+    <button class="cyra-close-panel" type="button" data-cyra-close>Volver a externa</button>
+  </div>
+
+  <div class="cyra-empty-state">
+    Esta pantalla queda preparada para integrar el registro interno manual. En el siguiente ajuste agregaremos la grilla de seccionamiento y el formulario de daños.
+  </div>
+
+  <div class="cyra-internal-grid" style="margin-top:16px">
+    <div class="cyra-zone-card">
+      <h3>Puertas internas</h3>
+      <p>Registro manual de daños en hoja izquierda y derecha de puerta.</p>
+    </div>
+    <div class="cyra-zone-card">
+      <h3>Lateral derecho interno</h3>
+      <p>Seccionamiento interno para identificar ubicación y daño.</p>
+    </div>
+    <div class="cyra-zone-card">
+      <h3>Frontal interior</h3>
+      <p>Registro de daños en panel frontal interno.</p>
+    </div>
+    <div class="cyra-zone-card">
+      <h3>Lateral izquierdo interno</h3>
+      <p>Seccionamiento interno para identificación manual.</p>
+    </div>
+    <div class="cyra-zone-card">
+      <h3>Piso interior</h3>
+      <p>Registro de daños, medidas y evidencia en piso.</p>
+    </div>
+    <div class="cyra-zone-card">
+      <h3>Techo interior</h3>
+      <p>Registro manual de daños en techo interno.</p>
+    </div>
+  </div>
+</section>
+
+<section id="cyra-validation-panel" class="cyra-module-panel">
+  <div class="cyra-panel-head">
+    <div>
+      <div class="cyra-panel-title">Validación de resultados CYRA</div>
+      <div class="cyra-panel-sub">
+        Cuando CYRA termine de evaluar el exterior, aquí se mostrarán los hallazgos para que el inspector confirme si fueron identificados correctamente.
+      </div>
+    </div>
+    <button class="cyra-close-panel" type="button" data-cyra-close>Volver a externa</button>
+  </div>
+
+  <div class="cyra-empty-state">
+    CYRA está evaluando el exterior. Los resultados aparecerán aquí al finalizar. Luego podrás marcar cada hallazgo con ✓ correcto o ✕ incorrecto, agregar motivo y subir nueva evidencia.
+  </div>
+</section>
+
+<script>
+/* === CYRA INSPECTION MODULES LOGIC === */
+(function(){
+  if(window.__cyraInspectionModulesReady) return;
+  window.__cyraInspectionModulesReady = true;
+
+  const buttons = Array.from(document.querySelectorAll("[data-cyra-module]"));
+  const internalPanel = document.getElementById("cyra-internal-panel");
+  const validationPanel = document.getElementById("cyra-validation-panel");
+
+  function setActive(name){
+    buttons.forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.cyraModule === name);
+    });
+
+    if(internalPanel) internalPanel.classList.toggle("on", name === "internal");
+    if(validationPanel) validationPanel.classList.toggle("on", name === "validation");
+  }
+
+  buttons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      setActive(btn.dataset.cyraModule);
+    });
+  });
+
+  document.querySelectorAll("[data-cyra-close]").forEach(btn => {
+    btn.addEventListener("click", () => setActive("external"));
+  });
+})();
+</script>
+<!-- === CYRA INSPECTION MODULES END === -->
 </body>
 </html>
