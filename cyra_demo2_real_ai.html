@@ -1996,5 +1996,76 @@ document.addEventListener("click", function() {
 })();
 </script>
 <!-- === CYRA SIDEBAR INTERNAL / EXTERNAL MODULES END === -->
+<!-- === CYRA FORCE INTERNAL ENTRY SCREEN START === -->
+<script>
+/* === CYRA FORCE INTERNAL ENTRY SCREEN === */
+(function(){
+  if(window.__cyraForceInternalEntryScreen) return;
+  window.__cyraForceInternalEntryScreen = true;
+
+  function normalizeContainer(value){
+    const clean = String(value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .trim();
+
+    return /^[A-Z]{4}\d{7}$/.test(clean) ? clean : "";
+  }
+
+  function getExternalContainerOnly(){
+    const ids = [
+      "hcode",
+      "h-code",
+      "containerId",
+      "container",
+      "container_id",
+      "containerCode",
+      "cyra-container-id"
+    ];
+
+    for(const id of ids){
+      const el = document.getElementById(id);
+      if(!el) continue;
+
+      const value = normalizeContainer(el.value || el.textContent || "");
+      if(value) return value;
+    }
+
+    const candidates = Array.from(document.querySelectorAll(".ccode,.container-code,.eiriv,.eirv,[data-container]"));
+
+    for(const el of candidates){
+      const value = normalizeContainer(el.value || el.textContent || el.getAttribute("data-container") || "");
+      if(value) return value;
+    }
+
+    return "";
+  }
+
+  function forceInternalFrame(){
+    const frame = document.getElementById("cyra-internal-embed-frame");
+    if(!frame) return;
+
+    const externalId = getExternalContainerOnly();
+
+    if(externalId){
+      frame.src = "cyra_interna.html?ct=" + encodeURIComponent(externalId) + "&tipo=40HC&iso=45G1&op=Gate%20In%20Inspection";
+    }else{
+      frame.src = "cyra_interna.html";
+    }
+  }
+
+  document.addEventListener("click", function(e){
+    const target = e.target.closest(".cyra-sidebar-internal-btn, #cyra-btn-internal");
+    if(!target) return;
+
+    localStorage.removeItem("CYRA_CURRENT_CONTAINER_ID");
+
+    setTimeout(forceInternalFrame, 100);
+    setTimeout(forceInternalFrame, 400);
+    setTimeout(forceInternalFrame, 900);
+  });
+})();
+</script>
+<!-- === CYRA FORCE INTERNAL ENTRY SCREEN END === -->
 </body>
 </html>
