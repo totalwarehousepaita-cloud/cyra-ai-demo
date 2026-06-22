@@ -1716,5 +1716,314 @@ document.addEventListener("click", function() {
 })();
 
 </script>
+<!-- === CYRA LEFT MODULE DRAWER START === -->
+<style>
+  .cyra-left-drawer{
+    position:fixed;
+    top:0;
+    left:0;
+    bottom:0;
+    width:62px;
+    z-index:99990;
+    background:linear-gradient(180deg,rgba(3,10,18,.98),rgba(4,18,30,.98));
+    border-right:1px solid rgba(0,180,240,.22);
+    box-shadow:12px 0 40px rgba(0,0,0,.35);
+    transition:width .25s ease;
+    overflow:hidden;
+    color:#e8f8ff;
+  }
+
+  .cyra-left-drawer:hover,
+  .cyra-left-drawer.open{
+    width:270px;
+  }
+
+  .cyra-drawer-logo{
+    height:64px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:0 17px;
+    border-bottom:1px solid rgba(0,180,240,.18);
+  }
+
+  .cyra-drawer-mark{
+    width:30px;
+    height:30px;
+    border-radius:10px;
+    background:linear-gradient(135deg,#00b4f0,#00d2ff);
+    color:#021018;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:900;
+    flex-shrink:0;
+  }
+
+  .cyra-drawer-title{
+    font-size:14px;
+    font-weight:900;
+    letter-spacing:1.4px;
+    white-space:nowrap;
+    color:#00d2ff;
+    text-transform:uppercase;
+  }
+
+  .cyra-drawer-sub{
+    font-size:10px;
+    color:#91b7c7;
+    white-space:nowrap;
+    margin-top:2px;
+  }
+
+  .cyra-drawer-menu{
+    padding:12px 8px;
+  }
+
+  .cyra-drawer-group{
+    margin-bottom:10px;
+  }
+
+  .cyra-drawer-btn{
+    width:100%;
+    min-height:46px;
+    border:1px solid rgba(0,180,240,.18);
+    background:rgba(255,255,255,.035);
+    color:#e8f8ff;
+    border-radius:14px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:10px 13px;
+    cursor:pointer;
+    text-align:left;
+    transition:all .2s ease;
+  }
+
+  .cyra-drawer-btn:hover{
+    background:rgba(0,180,240,.10);
+    border-color:rgba(0,180,240,.34);
+  }
+
+  .cyra-drawer-btn.active{
+    background:linear-gradient(135deg,rgba(0,180,240,.22),rgba(0,210,255,.14));
+    border-color:#00d2ff;
+  }
+
+  .cyra-drawer-icon{
+    width:24px;
+    min-width:24px;
+    text-align:center;
+    font-size:17px;
+  }
+
+  .cyra-drawer-text{
+    white-space:nowrap;
+    overflow:hidden;
+  }
+
+  .cyra-drawer-name{
+    font-size:12px;
+    font-weight:900;
+    letter-spacing:.6px;
+    text-transform:uppercase;
+  }
+
+  .cyra-drawer-desc{
+    font-size:10px;
+    color:#91b7c7;
+    margin-top:2px;
+  }
+
+  .cyra-internal-shell{
+    display:none;
+    position:fixed;
+    top:0;
+    left:62px;
+    right:0;
+    bottom:0;
+    z-index:99980;
+    background:#030a0f;
+  }
+
+  .cyra-internal-shell.on{
+    display:block;
+  }
+
+  .cyra-internal-topbar{
+    height:54px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 18px;
+    background:rgba(3,10,18,.98);
+    border-bottom:1px solid rgba(0,180,240,.22);
+    color:#e8f8ff;
+  }
+
+  .cyra-internal-title{
+    font-size:13px;
+    font-weight:900;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:#00d2ff;
+  }
+
+  .cyra-internal-note{
+    font-size:11px;
+    color:#91b7c7;
+    margin-top:2px;
+  }
+
+  .cyra-internal-close{
+    border:1px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.05);
+    color:#e8f8ff;
+    border-radius:12px;
+    padding:8px 12px;
+    font-weight:800;
+    cursor:pointer;
+  }
+
+  .cyra-internal-frame{
+    width:100%;
+    height:calc(100vh - 54px);
+    border:0;
+    background:#030a0f;
+  }
+
+  body.cyra-internal-mode{
+    overflow:hidden;
+  }
+
+  body.cyra-internal-mode .cyra-left-drawer{
+    width:270px;
+  }
+
+  @media(max-width:850px){
+    .cyra-left-drawer{
+      width:54px;
+    }
+
+    .cyra-left-drawer:hover,
+    .cyra-left-drawer.open,
+    body.cyra-internal-mode .cyra-left-drawer{
+      width:230px;
+    }
+
+    .cyra-internal-shell{
+      left:54px;
+    }
+  }
+</style>
+
+<aside id="cyra-left-drawer" class="cyra-left-drawer">
+  <div class="cyra-drawer-logo">
+    <div class="cyra-drawer-mark">C</div>
+    <div>
+      <div class="cyra-drawer-title">CYRA</div>
+      <div class="cyra-drawer-sub">Inspection Modules</div>
+    </div>
+  </div>
+
+  <div class="cyra-drawer-menu">
+    <div class="cyra-drawer-group">
+      <button id="cyra-btn-external" class="cyra-drawer-btn active" type="button">
+        <span class="cyra-drawer-icon">📷</span>
+        <span class="cyra-drawer-text">
+          <span class="cyra-drawer-name">Inspección externa</span>
+          <span class="cyra-drawer-desc">Fotos · IA · EIR exterior</span>
+        </span>
+      </button>
+    </div>
+
+    <div class="cyra-drawer-group">
+      <button id="cyra-btn-internal" class="cyra-drawer-btn" type="button">
+        <span class="cyra-drawer-icon">📋</span>
+        <span class="cyra-drawer-text">
+          <span class="cyra-drawer-name">Inspección interna</span>
+          <span class="cyra-drawer-desc">Manual · Ubicación · Daños</span>
+        </span>
+      </button>
+    </div>
+  </div>
+</aside>
+
+<section id="cyra-internal-shell" class="cyra-internal-shell">
+  <div class="cyra-internal-topbar">
+    <div>
+      <div class="cyra-internal-title">Inspección interna manual</div>
+      <div class="cyra-internal-note">Módulo interno cargado desde cyra_interna.html</div>
+    </div>
+    <button id="cyra-close-internal" class="cyra-internal-close" type="button">
+      Volver a inspección externa
+    </button>
+  </div>
+
+  <iframe
+    id="cyra-internal-frame"
+    class="cyra-internal-frame"
+    src="cyra_interna.html"
+    title="CYRA Inspección Interna">
+  </iframe>
+</section>
+
+<script>
+/* === CYRA LEFT MODULE DRAWER LOGIC === */
+(function(){
+  if(window.__cyraLeftModuleDrawerReady) return;
+  window.__cyraLeftModuleDrawerReady = true;
+
+  const btnExternal = document.getElementById("cyra-btn-external");
+  const btnInternal = document.getElementById("cyra-btn-internal");
+  const closeInternal = document.getElementById("cyra-close-internal");
+  const internalShell = document.getElementById("cyra-internal-shell");
+
+  function showExternal(){
+    document.body.classList.remove("cyra-internal-mode");
+
+    if(internalShell){
+      internalShell.classList.remove("on");
+    }
+
+    if(btnExternal){
+      btnExternal.classList.add("active");
+    }
+
+    if(btnInternal){
+      btnInternal.classList.remove("active");
+    }
+  }
+
+  function showInternal(){
+    document.body.classList.add("cyra-internal-mode");
+
+    if(internalShell){
+      internalShell.classList.add("on");
+    }
+
+    if(btnExternal){
+      btnExternal.classList.remove("active");
+    }
+
+    if(btnInternal){
+      btnInternal.classList.add("active");
+    }
+  }
+
+  if(btnExternal){
+    btnExternal.addEventListener("click", showExternal);
+  }
+
+  if(btnInternal){
+    btnInternal.addEventListener("click", showInternal);
+  }
+
+  if(closeInternal){
+    closeInternal.addEventListener("click", showExternal);
+  }
+})();
+</script>
+<!-- === CYRA LEFT MODULE DRAWER END === -->
 </body>
 </html>
