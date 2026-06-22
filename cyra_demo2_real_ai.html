@@ -2058,7 +2058,8 @@ document.addEventListener("click", function() {
     const target = e.target.closest(".cyra-sidebar-internal-btn, #cyra-btn-internal");
     if(!target) return;
 
-    localStorage.removeItem("CYRA_CURRENT_CONTAINER_ID");
+localStorage.removeItem("CYRA_CURRENT_CONTAINER_ID");
+/* No borrar CYRA_EXTERNAL_CONTAINER_ID: lo usa la inspección externa */
 
     setTimeout(forceInternalFrame, 100);
     setTimeout(forceInternalFrame, 400);
