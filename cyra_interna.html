@@ -2317,5 +2317,95 @@ genCt();
 })();
 </script>
 <!-- === CYRA INTERNAL ALWAYS ASK CONTAINER END === -->
+<!-- === CYRA CLEAN DUPLICATED INTERNAL ENTRY START === -->
+<style>
+  /* Oculta bloques anteriores duplicados */
+  #cyra-container-gate,
+  #cyra-manual-container-box,
+  #cyra-internal-start-card {
+    display: none !important;
+  }
+
+  /* Mientras esperamos contenedor, ocultamos la pantalla original de nueva inspección */
+  body.cyra-internal-waiting-container #s-sel .sel-title,
+  body.cyra-internal-waiting-container #s-sel .sel-sub,
+  body.cyra-internal-waiting-container #s-sel .sel-cols,
+  body.cyra-internal-waiting-container #s-sel .sel-actions {
+    display: none !important;
+  }
+
+  /* Oculta el panel viejo donde salía Operación */
+  body.cyra-internal-waiting-container .sel-panel,
+  body.cyra-internal-waiting-container .gen-row,
+  body.cyra-internal-waiting-container .gen-prev {
+    display: none !important;
+  }
+
+  /* Centra solo el cuadro nuevo */
+  body.cyra-internal-waiting-container #cyra-container-entry-screen {
+    display: block !important;
+    margin-top: 40px !important;
+  }
+</style>
+
+<script>
+/* === CYRA CLEAN DUPLICATED INTERNAL ENTRY === */
+(function(){
+  if(window.__cyraCleanDuplicatedInternalEntry) return;
+  window.__cyraCleanDuplicatedInternalEntry = true;
+
+  function normalizeContainer(value){
+    const clean = String(value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .trim();
+
+    return /^[A-Z]{4}\d{7}$/.test(clean) ? clean : "";
+  }
+
+  function getParam(name){
+    return new URLSearchParams(window.location.search).get(name) || "";
+  }
+
+  function cleanEntryScreen(){
+    const hasExternalContainer = normalizeContainer(getParam("ct"));
+
+    /* Si no vino contenedor desde externa, el campo debe estar vacío */
+    const input = document.getElementById("cyra-container-entry-input");
+    if(input && !hasExternalContainer){
+      input.value = "";
+      input.placeholder = "SEGU9820390";
+    }
+
+    /* Borra cualquier dato viejo guardado */
+    if(!hasExternalContainer){
+      localStorage.removeItem("CYRA_CURRENT_CONTAINER_ID");
+    }
+
+    /* Oculta bloques duplicados */
+    [
+      "cyra-container-gate",
+      "cyra-manual-container-box",
+      "cyra-internal-start-card"
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.style.display = "none";
+    });
+
+    /* Oculta la pantalla original del generador */
+    document.querySelectorAll(".sel-title,.sel-sub,.sel-cols,.sel-actions,.sel-panel,.gen-row,.gen-prev").forEach(el => {
+      if(el.closest("#s-sel")){
+        el.style.display = "none";
+      }
+    });
+  }
+
+  setTimeout(cleanEntryScreen, 100);
+  setTimeout(cleanEntryScreen, 500);
+  setTimeout(cleanEntryScreen, 1000);
+  setInterval(cleanEntryScreen, 1200);
+})();
+</script>
+<!-- === CYRA CLEAN DUPLICATED INTERNAL ENTRY END === -->
 </body>
 </html>
