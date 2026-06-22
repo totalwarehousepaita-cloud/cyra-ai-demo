@@ -1690,5 +1690,78 @@ genCt();
 })();
 </script>
 <!-- === CYRA INTERNAL REPLACE GENERATED CONTAINER CARD END === -->
+<!-- === CYRA HIDE INTERNAL CONTAINER BOX AFTER START START === -->
+<style>
+  body.cyra-internal-started #cyra-manual-container-box,
+  body.cyra-internal-started #cyra-internal-start-card {
+    display: none !important;
+  }
+</style>
+
+<script>
+/* === CYRA HIDE INTERNAL CONTAINER BOX AFTER START === */
+(function(){
+  if(window.__cyraHideInternalContainerBoxAfterStart) return;
+  window.__cyraHideInternalContainerBoxAfterStart = true;
+
+  function isInternalInspectionStarted(){
+    const app = document.getElementById("s-app");
+    if(!app) return false;
+
+    const display = window.getComputedStyle(app).display;
+    const visible = display !== "none" && app.classList.contains("on");
+
+    return visible;
+  }
+
+  function hideContainerBox(){
+    if(isInternalInspectionStarted()){
+      document.body.classList.add("cyra-internal-started");
+
+      const floatingBox = document.getElementById("cyra-manual-container-box");
+      if(floatingBox) floatingBox.style.display = "none";
+
+      const startCard = document.getElementById("cyra-internal-start-card");
+      if(startCard) startCard.style.display = "none";
+    }
+  }
+
+  const oldStartInsp = window.startInsp;
+  if(typeof oldStartInsp === "function"){
+    window.startInsp = function(){
+      const result = oldStartInsp.apply(this, arguments);
+      setTimeout(hideContainerBox, 100);
+      setTimeout(hideContainerBox, 500);
+      return result;
+    };
+  }
+
+  const oldSetInternalContainer = window.setInternalContainer;
+  if(typeof oldSetInternalContainer === "function"){
+    window.setInternalContainer = function(){
+      const result = oldSetInternalContainer.apply(this, arguments);
+      setTimeout(hideContainerBox, 100);
+      setTimeout(hideContainerBox, 500);
+      return result;
+    };
+  }
+
+  document.addEventListener("click", function(e){
+    const txt = (e.target && e.target.textContent || "").toUpperCase();
+
+    if(
+      txt.includes("INICIAR CON ESTE CONTENEDOR") ||
+      txt.includes("INICIAR INSPECCIÓN") ||
+      txt.includes("APLICAR")
+    ){
+      setTimeout(hideContainerBox, 150);
+      setTimeout(hideContainerBox, 600);
+    }
+  });
+
+  setInterval(hideContainerBox, 800);
+})();
+</script>
+<!-- === CYRA HIDE INTERNAL CONTAINER BOX AFTER START END === -->
 </body>
 </html>
