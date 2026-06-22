@@ -2055,5 +2055,267 @@ genCt();
 })();
 </script>
 <!-- === CYRA INTERNAL CLEAN CONTAINER GATE END === -->
+<!-- === CYRA INTERNAL ALWAYS ASK CONTAINER START === -->
+<style>
+  body.cyra-internal-waiting-container #s-app,
+  body.cyra-internal-waiting-container #cyra-manual-container-box,
+  body.cyra-internal-waiting-container #cyra-internal-start-card {
+    display: none !important;
+  }
+
+  body.cyra-internal-active #cyra-container-entry-screen,
+  body.cyra-internal-active #cyra-manual-container-box,
+  body.cyra-internal-active #cyra-internal-start-card {
+    display: none !important;
+  }
+
+  #cyra-container-entry-screen{
+    display:none;
+    width:100%;
+    max-width:760px;
+    margin:38px auto;
+    border:1px solid rgba(0,210,120,.38);
+    border-radius:24px;
+    background:rgba(0,210,120,.055);
+    padding:28px;
+    box-shadow:0 18px 60px rgba(0,0,0,.32);
+  }
+
+  body.cyra-internal-waiting-container #cyra-container-entry-screen{
+    display:block;
+  }
+
+  .cyra-entry-title{
+    font-family:var(--fd);
+    font-size:21px;
+    font-weight:900;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--g);
+    margin-bottom:8px;
+  }
+
+  .cyra-entry-sub{
+    color:var(--txt2);
+    font-size:12px;
+    margin-bottom:18px;
+    line-height:1.5;
+  }
+
+  .cyra-entry-row{
+    display:flex;
+    gap:12px;
+    align-items:center;
+  }
+
+  .cyra-entry-input{
+    flex:1;
+    min-width:0;
+    border:1px solid rgba(0,210,120,.34);
+    background:rgba(255,255,255,.045);
+    color:var(--txt);
+    border-radius:14px;
+    padding:15px 17px;
+    font-family:var(--fm);
+    font-size:22px;
+    font-weight:900;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    outline:none;
+  }
+
+  .cyra-entry-btn{
+    border:1px solid rgba(0,210,120,.42);
+    background:linear-gradient(135deg,#00d278,#009855);
+    color:#020d07;
+    border-radius:14px;
+    padding:15px 24px;
+    font-family:var(--fd);
+    font-size:14px;
+    font-weight:900;
+    letter-spacing:1px;
+    cursor:pointer;
+    text-transform:uppercase;
+  }
+
+  .cyra-entry-help{
+    margin-top:12px;
+    color:var(--txt2);
+    font-size:11px;
+    line-height:1.45;
+  }
+
+  @media(max-width:700px){
+    .cyra-entry-row{
+      flex-direction:column;
+      align-items:stretch;
+    }
+
+    .cyra-entry-input{
+      font-size:18px;
+    }
+  }
+</style>
+
+<script>
+/* === CYRA INTERNAL ALWAYS ASK CONTAINER === */
+(function(){
+  if(window.__cyraInternalAlwaysAskContainer) return;
+  window.__cyraInternalAlwaysAskContainer = true;
+
+  localStorage.removeItem("CYRA_CURRENT_CONTAINER_ID");
+
+  function normalizeContainer(value){
+    const clean = String(value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .trim();
+
+    return /^[A-Z]{4}\d{7}$/.test(clean) ? clean : "";
+  }
+
+  function getParam(name){
+    return new URLSearchParams(window.location.search).get(name) || "";
+  }
+
+  function createEntryScreen(){
+    if(document.getElementById("cyra-container-entry-screen")) return;
+
+    const target =
+      document.querySelector(".sel-wrap") ||
+      document.getElementById("s-sel") ||
+      document.body;
+
+    const externalCode = normalizeContainer(getParam("ct") || "");
+
+    const box = document.createElement("div");
+    box.id = "cyra-container-entry-screen";
+    box.innerHTML = `
+      <div class="cyra-entry-title">Ingresar contenedor interno</div>
+      <div class="cyra-entry-sub">
+        ${externalCode
+          ? "CYRA externa detectó un contenedor. Confírmalo para iniciar la inspección interna."
+          : "CYRA externa aún no detectó un contenedor. Ingresa el código para iniciar la inspección interna."}
+      </div>
+
+      <div class="cyra-entry-row">
+        <input
+          id="cyra-container-entry-input"
+          class="cyra-entry-input"
+          type="text"
+          maxlength="11"
+          placeholder="SEGU9820390"
+          value="${externalCode}">
+        <button
+          id="cyra-container-entry-btn"
+          class="cyra-entry-btn"
+          type="button">Ingresar</button>
+      </div>
+
+      <div class="cyra-entry-help">
+        Formato esperado: 4 letras + 7 números. Ejemplo: SEGU9820390.
+      </div>
+    `;
+
+    target.prepend(box);
+
+    const input = document.getElementById("cyra-container-entry-input");
+    const btn = document.getElementById("cyra-container-entry-btn");
+
+    input.addEventListener("input", function(){
+      input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0,11);
+    });
+
+    input.addEventListener("keydown", function(e){
+      if(e.key === "Enter"){
+        startInternalWithContainer(input.value);
+      }
+    });
+
+    btn.addEventListener("click", function(){
+      startInternalWithContainer(input.value);
+    });
+
+    setTimeout(() => input.focus(), 250);
+  }
+
+  function startInternalWithContainer(code){
+    const id = normalizeContainer(code);
+
+    if(!id){
+      alert("Ingresa un número de contenedor válido. Ejemplo: SEGU9820390");
+      return;
+    }
+
+    const tipo = getParam("tipo") || "40HC";
+    const iso = getParam("iso") || "45G1";
+    const op = getParam("op") || "Gate In Inspection";
+
+    if(window.ST){
+      ST.ct = {
+        code: id,
+        tipo: tipo,
+        nav: id.slice(0,4),
+        op: op,
+        iso: iso
+      };
+    }
+
+    document.body.classList.remove("cyra-internal-waiting-container");
+    document.body.classList.add("cyra-internal-active");
+
+    if(typeof show === "function"){
+      show("s-app");
+    }
+
+    const hCode = document.getElementById("h-code");
+    const hType = document.getElementById("h-type");
+    const hOp = document.getElementById("h-op");
+    const spCode = document.getElementById("sp-code");
+    const spIso = document.getElementById("sp-iso");
+
+    if(hCode) hCode.textContent = id;
+    if(hType) hType.textContent = tipo;
+    if(hOp) hOp.textContent = "⚙️ " + op;
+    if(spCode) spCode.textContent = id;
+    if(spIso) spIso.textContent = iso;
+
+    if(typeof startTimer === "function") startTimer();
+    if(typeof renderSide === "function") renderSide();
+    if(typeof renderZone === "function") renderZone("di");
+    if(typeof toast === "function") toast("✓ Inspección interna iniciada · " + id, "g");
+  }
+
+  function boot(){
+    createEntryScreen();
+
+    document.body.classList.add("cyra-internal-waiting-container");
+    document.body.classList.remove("cyra-internal-active");
+
+    if(typeof show === "function"){
+      show("s-sel");
+    }
+
+    const oldBoxes = [
+      "cyra-manual-container-box",
+      "cyra-internal-start-card"
+    ];
+
+    oldBoxes.forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.style.display = "none";
+    });
+  }
+
+  window.startInternalWithContainer = startInternalWithContainer;
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", boot);
+  }else{
+    boot();
+  }
+})();
+</script>
+<!-- === CYRA INTERNAL ALWAYS ASK CONTAINER END === -->
 </body>
 </html>
