@@ -1763,5 +1763,297 @@ genCt();
 })();
 </script>
 <!-- === CYRA HIDE INTERNAL CONTAINER BOX AFTER START END === -->
+<!-- === CYRA INTERNAL CLEAN CONTAINER GATE START === -->
+<style>
+  /* Oculta cualquier caja flotante anterior cuando ya estamos dentro de la inspección */
+  body.cyra-internal-inspection-active #cyra-manual-container-box,
+  body.cyra-internal-inspection-active #cyra-internal-start-card {
+    display: none !important;
+  }
+
+  /* Pantalla previa limpia para ingresar contenedor si no viene de externa */
+  #cyra-container-gate {
+    display: none;
+    width: 100%;
+    max-width: 760px;
+    margin: 30px auto;
+    border: 1px solid rgba(0,210,120,.38);
+    border-radius: 22px;
+    background: rgba(0,210,120,.055);
+    padding: 26px;
+    box-shadow: 0 18px 60px rgba(0,0,0,.32);
+  }
+
+  #cyra-container-gate.on {
+    display: block;
+  }
+
+  .cyra-gate-title {
+    font-family: var(--fd);
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--g);
+    margin-bottom: 6px;
+  }
+
+  .cyra-gate-sub {
+    color: var(--txt2);
+    font-size: 12px;
+    margin-bottom: 18px;
+    line-height: 1.5;
+  }
+
+  .cyra-gate-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .cyra-gate-input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid rgba(0,210,120,.34);
+    background: rgba(255,255,255,.045);
+    color: var(--txt);
+    border-radius: 14px;
+    padding: 15px 17px;
+    font-family: var(--fm);
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    outline: none;
+  }
+
+  .cyra-gate-input:focus {
+    border-color: var(--g);
+    box-shadow: 0 0 0 3px rgba(0,210,120,.10);
+  }
+
+  .cyra-gate-btn {
+    border: 1px solid rgba(0,210,120,.42);
+    background: linear-gradient(135deg,#00d278,#009855);
+    color: #020d07;
+    border-radius: 14px;
+    padding: 15px 22px;
+    font-family: var(--fd);
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+
+  .cyra-gate-help {
+    margin-top: 12px;
+    color: var(--txt2);
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  @media(max-width:700px) {
+    .cyra-gate-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .cyra-gate-input {
+      font-size: 18px;
+    }
+  }
+</style>
+
+<script>
+/* === CYRA INTERNAL CLEAN CONTAINER GATE === */
+(function(){
+  if(window.__cyraInternalCleanContainerGate) return;
+  window.__cyraInternalCleanContainerGate = true;
+
+  function normalizeContainer(value){
+    const clean = String(value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .trim();
+
+    return /^[A-Z]{4}\d{7}$/.test(clean) ? clean : "";
+  }
+
+  function getParam(name){
+    return new URLSearchParams(window.location.search).get(name) || "";
+  }
+
+  function getContainerFromUrlOrStorage(){
+    return normalizeContainer(
+      getParam("ct") ||
+      localStorage.getItem("CYRA_CURRENT_CONTAINER_ID") ||
+      ""
+    );
+  }
+
+  function hideOldBoxes(){
+    const floatingBox = document.getElementById("cyra-manual-container-box");
+    if(floatingBox) floatingBox.style.display = "none";
+
+    const startCard = document.getElementById("cyra-internal-start-card");
+    if(startCard) startCard.style.display = "none";
+  }
+
+  function startInternalInspection(code){
+    const id = normalizeContainer(code);
+
+    if(!id){
+      alert("Ingresa un número de contenedor válido. Ejemplo: SEGU9820390");
+      return;
+    }
+
+    localStorage.setItem("CYRA_CURRENT_CONTAINER_ID", id);
+
+    const tipo = getParam("tipo") || "40HC";
+    const iso = getParam("iso") || "45G1";
+    const op = getParam("op") || "Gate In Inspection";
+
+    try {
+      if(window.ST){
+        ST.ct = {
+          code: id,
+          tipo: tipo,
+          nav: id.slice(0,4),
+          op: op,
+          iso: iso
+        };
+      }
+
+      const gate = document.getElementById("cyra-container-gate");
+      if(gate) gate.classList.remove("on");
+
+      document.body.classList.add("cyra-internal-inspection-active");
+      hideOldBoxes();
+
+      if(typeof show === "function"){
+        show("s-app");
+      }
+
+      const hCode = document.getElementById("h-code");
+      const hType = document.getElementById("h-type");
+      const hOp = document.getElementById("h-op");
+      const spCode = document.getElementById("sp-code");
+      const spIso = document.getElementById("sp-iso");
+      const btnStart = document.getElementById("btn-start");
+
+      if(hCode) hCode.textContent = id;
+      if(hType) hType.textContent = tipo;
+      if(hOp) hOp.textContent = "⚙️ " + op;
+      if(spCode) spCode.textContent = id;
+      if(spIso) spIso.textContent = iso;
+      if(btnStart) btnStart.disabled = false;
+
+      if(typeof startTimer === "function") startTimer();
+      if(typeof renderSide === "function") renderSide();
+      if(typeof renderZone === "function") renderZone("di");
+      if(typeof toast === "function") toast("✓ Inspección interna iniciada · " + id, "g");
+
+    } catch(e) {
+      console.warn("Error iniciando inspección interna:", e);
+    }
+  }
+
+  function createContainerGate(){
+    if(document.getElementById("cyra-container-gate")) return;
+
+    const target =
+      document.querySelector(".sel-wrap") ||
+      document.getElementById("s-sel") ||
+      document.body;
+
+    const gate = document.createElement("div");
+    gate.id = "cyra-container-gate";
+    gate.innerHTML = `
+      <div class="cyra-gate-title">Ingresar contenedor interno</div>
+      <div class="cyra-gate-sub">
+        CYRA externa aún no detectó un número de contenedor. Ingresa el código manualmente para iniciar la inspección interna.
+      </div>
+
+      <div class="cyra-gate-row">
+        <input
+          id="cyra-container-gate-input"
+          class="cyra-gate-input"
+          type="text"
+          maxlength="11"
+          placeholder="SEGU9820390">
+        <button
+          id="cyra-container-gate-apply"
+          class="cyra-gate-btn"
+          type="button">Aplicar</button>
+      </div>
+
+      <div class="cyra-gate-help">
+        Formato esperado: 4 letras + 7 números. Ejemplo: SEGU9820390.
+      </div>
+    `;
+
+    target.prepend(gate);
+
+    const input = document.getElementById("cyra-container-gate-input");
+    const apply = document.getElementById("cyra-container-gate-apply");
+
+    input.addEventListener("input", function(){
+      input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0,11);
+    });
+
+    input.addEventListener("keydown", function(e){
+      if(e.key === "Enter"){
+        startInternalInspection(input.value);
+      }
+    });
+
+    apply.addEventListener("click", function(){
+      startInternalInspection(input.value);
+    });
+  }
+
+  function boot(){
+    hideOldBoxes();
+    createContainerGate();
+
+    const code = getContainerFromUrlOrStorage();
+
+    if(code){
+      startInternalInspection(code);
+    }else{
+      if(typeof show === "function"){
+        show("s-sel");
+      }
+
+      const gate = document.getElementById("cyra-container-gate");
+      if(gate) gate.classList.add("on");
+    }
+  }
+
+  const oldStartInsp = window.startInsp;
+  if(typeof oldStartInsp === "function"){
+    window.startInsp = function(){
+      const code = getContainerFromUrlOrStorage();
+      if(code){
+        startInternalInspection(code);
+        return;
+      }
+
+      const input = document.getElementById("cyra-container-gate-input");
+      if(input){
+        startInternalInspection(input.value);
+      }
+    };
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", boot);
+  }else{
+    boot();
+  }
+})();
+</script>
+<!-- === CYRA INTERNAL CLEAN CONTAINER GATE END === -->
 </body>
 </html>
