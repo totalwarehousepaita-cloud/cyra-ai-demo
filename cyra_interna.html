@@ -1430,5 +1430,265 @@ genCt();
 })();
 </script>
 <!-- === CYRA INTERNAL RECEIVE CONTAINER END === -->
+<!-- === CYRA INTERNAL REPLACE GENERATED CONTAINER CARD START === -->
+<style>
+  /* Oculta la lista de pendientes y el generador original */
+  #ct-list,
+  #g-tipo,
+  #g-nav,
+  #g-op,
+  #g-code,
+  #g-type {
+    display: none !important;
+  }
+
+  .sel-cols {
+    grid-template-columns: 1fr !important;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .sel-panel:first-child {
+    display: none !important;
+  }
+
+  .sel-panel .sel-pt {
+    display: none !important;
+  }
+
+  .gen-row,
+  .gen-prev,
+  .sel-panel button[onclick="selGen()"] {
+    display: none !important;
+  }
+
+  .cyra-internal-start-card {
+    border: 1px solid rgba(0,210,120,.38);
+    border-radius: 18px;
+    background: rgba(0,210,120,.055);
+    padding: 22px;
+    box-shadow: 0 18px 60px rgba(0,0,0,.32);
+  }
+
+  .cyra-internal-start-label {
+    font-family: var(--fd);
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--g);
+    margin-bottom: 12px;
+  }
+
+  .cyra-internal-start-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .cyra-internal-start-input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid rgba(0,210,120,.34);
+    background: rgba(255,255,255,.045);
+    color: var(--txt);
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-family: var(--fm);
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    outline: none;
+  }
+
+  .cyra-internal-start-input:focus {
+    border-color: var(--g);
+    box-shadow: 0 0 0 3px rgba(0,210,120,.10);
+  }
+
+  .cyra-internal-start-btn {
+    border: 1px solid rgba(0,210,120,.42);
+    background: rgba(0,210,120,.16);
+    color: var(--txt);
+    border-radius: 14px;
+    padding: 14px 20px;
+    font-family: var(--fd);
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+
+  .cyra-internal-start-btn:hover {
+    background: rgba(0,210,120,.24);
+  }
+
+  .cyra-internal-start-help {
+    margin-top: 10px;
+    color: var(--txt2);
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  @media(max-width:700px) {
+    .cyra-internal-start-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .cyra-internal-start-input {
+      font-size: 18px;
+    }
+  }
+</style>
+
+<script>
+/* === CYRA INTERNAL REPLACE GENERATED CONTAINER CARD === */
+(function(){
+  if(window.__cyraInternalReplaceGeneratedContainer) return;
+  window.__cyraInternalReplaceGeneratedContainer = true;
+
+  function normalizeContainer(value){
+    const clean = String(value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .trim();
+
+    return /^[A-Z]{4}\d{7}$/.test(clean) ? clean : "";
+  }
+
+  function getParam(name){
+    return new URLSearchParams(window.location.search).get(name) || "";
+  }
+
+  function getInitialContainer(){
+    return normalizeContainer(
+      getParam("ct") ||
+      localStorage.getItem("CYRA_CURRENT_CONTAINER_ID") ||
+      ""
+    );
+  }
+
+  function setInternalContainer(code){
+    const id = normalizeContainer(code);
+
+    if(!id){
+      alert("Ingresa un número de contenedor válido. Ejemplo: SEGU9820390");
+      return;
+    }
+
+    localStorage.setItem("CYRA_CURRENT_CONTAINER_ID", id);
+
+    const tipo = getParam("tipo") || "40HC";
+    const iso = getParam("iso") || "45G1";
+    const op = getParam("op") || "Gate In Inspection";
+
+    if(window.ST){
+      ST.ct = {
+        code: id,
+        tipo: tipo,
+        nav: id.slice(0,4),
+        op: op,
+        iso: iso
+      };
+    }
+
+    const btnStart = document.getElementById("btn-start");
+    if(btnStart) btnStart.disabled = false;
+
+    const hCode = document.getElementById("h-code");
+    const hType = document.getElementById("h-type");
+    const hOp = document.getElementById("h-op");
+    const spCode = document.getElementById("sp-code");
+    const spIso = document.getElementById("sp-iso");
+
+    if(hCode) hCode.textContent = id;
+    if(hType) hType.textContent = tipo;
+    if(hOp) hOp.textContent = "⚙️ " + op;
+    if(spCode) spCode.textContent = id;
+    if(spIso) spIso.textContent = iso;
+
+    if(typeof toast === "function"){
+      toast("✓ Contenedor aplicado · " + id, "g");
+    }
+  }
+
+  function buildCard(){
+    const selPanel = document.querySelector(".sel-panel:nth-child(2)") || document.querySelector(".sel-panel");
+    if(!selPanel || document.getElementById("cyra-internal-start-card")) return;
+
+    const card = document.createElement("div");
+    card.id = "cyra-internal-start-card";
+    card.className = "cyra-internal-start-card";
+
+    const initial = getInitialContainer();
+
+    card.innerHTML = `
+      <div class="cyra-internal-start-label">Contenedor interno</div>
+      <div class="cyra-internal-start-row">
+        <input
+          id="cyra-internal-start-input"
+          class="cyra-internal-start-input"
+          type="text"
+          maxlength="11"
+          placeholder="SEGU9820390"
+          value="${initial}">
+        <button
+          id="cyra-internal-start-apply"
+          class="cyra-internal-start-btn"
+          type="button">Aplicar</button>
+      </div>
+      <div class="cyra-internal-start-help">
+        Usa el mismo contenedor de la inspección externa o escríbelo manualmente si CYRA aún no lo detectó.
+      </div>
+    `;
+
+    selPanel.insertBefore(card, selPanel.firstChild);
+
+    const input = document.getElementById("cyra-internal-start-input");
+    const apply = document.getElementById("cyra-internal-start-apply");
+
+    input.addEventListener("input", function(){
+      input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0,11);
+    });
+
+    input.addEventListener("keydown", function(e){
+      if(e.key === "Enter"){
+        setInternalContainer(input.value);
+      }
+    });
+
+    apply.addEventListener("click", function(){
+      setInternalContainer(input.value);
+    });
+
+    if(initial){
+      setInternalContainer(initial);
+    }
+  }
+
+  function overrideOldGenerator(){
+    window.genCt = function(){};
+    window.selGen = function(){
+      const input = document.getElementById("cyra-internal-start-input");
+      setInternalContainer(input ? input.value : "");
+    };
+  }
+
+  function boot(){
+    buildCard();
+    overrideOldGenerator();
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", boot);
+  }else{
+    boot();
+  }
+})();
+</script>
+<!-- === CYRA INTERNAL REPLACE GENERATED CONTAINER CARD END === -->
 </body>
 </html>
