@@ -2067,5 +2067,149 @@ document.addEventListener("click", function() {
 })();
 </script>
 <!-- === CYRA FORCE INTERNAL ENTRY SCREEN END === -->
+<!-- === CYRA FIX EXTERNAL CONTAINER DETECTION START === -->
+<script>
+/* === CYRA FIX EXTERNAL CONTAINER DETECTION === */
+(function(){
+  if(window.__cyraFixExternalContainerDetection) return;
+  window.__cyraFixExternalContainerDetection = true;
+
+  function normalizeContainer(value){
+    const clean = String(value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .trim();
+
+    return /^[A-Z]{4}\d{7}$/.test(clean) ? clean : "";
+  }
+
+  function getContainerFromApiData(data){
+    if(!data || typeof data !== "object") return "";
+
+    const direct = normalizeContainer(
+      data.container_id_detected ||
+      data.container_id ||
+      data.container ||
+      data.contenedor ||
+      data.iso_container ||
+      ""
+    );
+
+    if(direct) return direct;
+
+    const possibleArrays = [
+      data.findings,
+      data.damages,
+      data.resultados,
+      data.results,
+      data.hallazgos
+    ];
+
+    for(const arr of possibleArrays){
+      if(!Array.isArray(arr)) continue;
+
+      for(const item of arr){
+        const id = normalizeContainer(
+          item?.container_id_detected ||
+          item?.container_id ||
+          item?.container ||
+          item?.contenedor ||
+          ""
+        );
+
+        if(id) return id;
+      }
+    }
+
+    return "";
+  }
+
+  function updateExternalContainerUI(id){
+    const code = normalizeContainer(id);
+    if(!code) return;
+
+    window.CYRA_EXTERNAL_CONTAINER_ID = code;
+    localStorage.setItem("CYRA_EXTERNAL_CONTAINER_ID", code);
+
+    /*
+      Actualiza solo elementos conocidos.
+      No usamos querySelectorAll("*") para no congelar la página.
+    */
+    const ids = [
+      "hcode",
+      "h-code",
+      "containerId",
+      "container",
+      "container_id",
+      "containerCode",
+      "cyra-container-id"
+    ];
+
+    ids.forEach(domId => {
+      const el = document.getElementById(domId);
+      if(!el) return;
+
+      if("value" in el){
+        el.value = code;
+      }else{
+        el.textContent = code;
+      }
+    });
+
+    const selectors = [
+      ".ccode",
+      ".container-code",
+      ".eiriv",
+      ".eirv",
+      "[data-container]"
+    ];
+
+    selectors.forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => {
+        const txt = String(el.textContent || "").trim().toUpperCase();
+
+        if(
+          !txt ||
+          txt === "PENDIENTE" ||
+          txt === "CONTENEDOR_VISIBLE" ||
+          /^[A-Z]{4}\d{7}$/.test(txt) ||
+          /^CYRA-EXT-/i.test(txt)
+        ){
+          el.textContent = code;
+        }
+
+        if(el.hasAttribute("data-container")){
+          el.setAttribute("data-container", code);
+        }
+      });
+    });
+  }
+
+  const originalFetch = window.fetch;
+
+  window.fetch = async function(input, init){
+    const response = await originalFetch.apply(this, arguments);
+
+    try{
+      const url = typeof input === "string" ? input : (input && input.url) || "";
+
+      if(url.includes("/api/evaluar-contenedor")){
+        response.clone().json().then(data => {
+          const id = getContainerFromApiData(data);
+
+          if(id){
+            updateExternalContainerUI(id);
+          }
+        }).catch(() => {});
+      }
+    }catch(e){}
+
+    return response;
+  };
+
+  window.CYRA_UPDATE_EXTERNAL_CONTAINER = updateExternalContainerUI;
+})();
+</script>
+<!-- === CYRA FIX EXTERNAL CONTAINER DETECTION END === -->
 </body>
 </html>
