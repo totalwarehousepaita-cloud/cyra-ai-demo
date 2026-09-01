@@ -882,7 +882,7 @@ const FACES=[
   {id:'right', name:'Lateral Derecho Ext.', icon:'▶', c1:'R'},
   {id:'front', name:'Frontal Externo',       icon:'▲', c1:'F'},
   {id:'left',  name:'Lateral Izq. Ext.',    icon:'◀', c1:'L'},
-  {id:'roof',  name:'Puerta',         icon:'■', c1:'T'},
+  {id:'roof',  name:'Puerta',         icon:'■', c1:'D'},
 ];
 const EXTRA=[
   {id:'ai',   name:'Estado IA',   icon:'🤖'},
@@ -904,6 +904,13 @@ function allLoaded(){return FACES.every(f=>ST.images[key(f.id)]);}
 function loadedCount(){return FACES.filter(f=>ST.images[key(f.id)]).length;}
 function genId(){return 'CYRA-EXT-'+Math.floor(100000+Math.random()*899999);}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function esc(value){
+  return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function locationLabel(f){
+  const code=esc(f.cyra_location||'—');
+  return f.location_status==='complete'?code:`${code} <span style="font-size:7px;color:#f0a800">(parcial)</span>`;
+}
 
 function genCyraCode(fid,bx,by,bw,bh){
   const face=FACES.find(f=>f.id===fid);
@@ -1053,7 +1060,8 @@ function renderFace(main,face){
         ${!analyzed?`<button class="urmv" onclick="removeImg('${face.id}')">✕</button>`:''}
       </div>
       ${findings.length>0?`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px">${findings.map((f,i)=>`
-        <span style="background:rgba(240,168,0,.08);border:1px solid rgba(240,168,0,.2);border-radius:20px;padding:2px 8px;font-size:8px;font-family:monospace;color:#f0a800;cursor:pointer" onclick="void(0)">⚠ ${f.damage_code} · ${f.cyra_location||'—'} · ${SL[f.severity]}</span>`).join('')}</div>`:''}`}
+        <span style="background:rgba(240,168,0,.08);border:1px solid rgba(240,168,0,.2);border-radius:20px;padding:2px 8px;font-size:8px;font-family:monospace;color:#f0a800;cursor:pointer" onclick="void(0)">⚠ ${f.damage_code} · ${locationLabel(f)} · ${SL[f.severity]}</span>`).join('')}</div>`:''}
+      ${findings.some(f=>f.location_status!=='complete')?`<div style="margin-top:7px;padding:7px 9px;border-radius:4px;border:1px solid rgba(240,168,0,.22);background:rgba(240,168,0,.06);font-size:8px;font-family:monospace;color:#f0a800">⚠ Daño identificado; ubicación CYRA parcial por falta de contexto visual. Tome una fotografía panorámica para completar la ubicación.</div>`:''}`}
     </div>
 
     ${inv?`<div class="invv"><span style="font-size:20px;flex-shrink:0">⚠️</span><div><div class="invtit">Imagen no válida — No corresponde a contenedor</div><div class="invsub">${inv.reason}</div><div style="font-size:9px;color:#1e4838;margin-top:4px;font-family:monospace">Carga una imagen de la cara externa del contenedor.</div></div></div>`:''}
@@ -1199,9 +1207,8 @@ async function callCyraEvaluator(face,img){
     if(!valid.includes(f.damage_code)) f.damage_code='WT';
     if(!severities.includes(f.severity)) f.severity='medium';
     if(!repairs.includes(f.repair_method)) f.repair_method='No requiere reparación';
-    if(!f.cyra_location && f.bbox_x!==undefined) {
-      f.cyra_location=genCyraCode(face.id,f.bbox_x,f.bbox_y,f.bbox_w,f.bbox_h);
-    }
+    if(!['complete','partial','mismatch'].includes(f.location_status)) f.location_status='partial';
+    if(f.location_status!=='complete') f.cyra_location=face.c1;
     if(typeof f.confidence !== 'number') f.confidence=.85;
     return f;
   });
@@ -1308,12 +1315,13 @@ function renderResults(main){
               <div style="flex:1;min-width:0">
                 <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
                   <span class="fc2code">${fd.damage_code}</span>
-                  <span class="fc2loc">${fd.cyra_location||'—'}</span>
+                  <span class="fc2loc">${locationLabel(fd)}</span>
                   <span class="sb ${SC[fd.severity]}">${SL[fd.severity]}</span>
                   <span style="font-family:monospace;font-size:7px;color:#1e4838;margin-left:auto">${Math.round((fd.confidence||.85)*100)}%</span>
                 </div>
                 <div class="fc2desc">${(fd.description||'').substring(0,70)}</div>
                 <div class="fc2sub">📐 ${fd.dimensions_mm||'—'} · 🔧 ${fd.repair_method||'—'}</div>
+                ${fd.location_status!=='complete'?`<div style="font-size:7px;color:#f0a800;font-family:monospace;margin-top:3px">⚠ ${esc(fd.location_reason||'La imagen no permite completar la ubicación CYRA.')}</div>`:''}
               </div>
             </div>`;
           }).join('')}</div>
@@ -1341,7 +1349,7 @@ function renderEIR(main){
   const avgConf=Math.round(ST.findings.reduce((s,f)=>s+(f.confidence||.85),0)/(ST.findings.length||1)*100);
   const rows=ST.findings.map((f,i)=>`<tr>
     <td><span style="font-family:monospace;font-size:8px;color:#00b4f0">${f.faceName||f.face}</span></td>
-    <td><span style="font-family:monospace;font-size:10px;font-weight:700;color:#00d278;background:rgba(0,210,120,.08);border:1px solid rgba(0,210,120,.2);padding:1px 5px;border-radius:3px;letter-spacing:1px">${f.cyra_location||'—'}</span></td>
+    <td><span style="font-family:monospace;font-size:10px;font-weight:700;color:${f.location_status==='complete'?'#00d278':'#f0a800'};background:rgba(0,210,120,.08);border:1px solid rgba(0,210,120,.2);padding:1px 5px;border-radius:3px;letter-spacing:1px">${esc(f.cyra_location||'—')}${f.location_status==='complete'?'':' (parcial)'}</span></td>
     <td><span style="font-family:monospace;font-size:9px;color:#f0a800;font-weight:700">${f.damage_code}</span></td>
     <td style="font-size:8px;max-width:100px">${(f.description||'—').substring(0,45)}</td>
     <td><span class="sb ${SC[f.severity]}">${SL[f.severity]}</span></td>
