@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import Anthropic from "@anthropic-ai/sdk";
 import "dotenv/config";
+import { normalizeLocationDecision } from "./location.js";
 
 const app = express();
 
@@ -73,7 +74,30 @@ LECTURA DEL CONTENEDOR:
 - No inventes códigos.
 
 CRITERIO DE UBICACIÓN CYRA:
-El código de ubicación SIEMPRE debe tener exactamente 4 caracteres.
+Evalúa la ubicación por separado de la detección del daño. Puedes reconocer un
+daño con alta confianza y, al mismo tiempo, no tener contexto suficiente para
+ubicarlo dentro de la cara completa del contenedor.
+
+Devuelve "location_status" para cada hallazgo:
+- "complete": se observan referencias suficientes para identificar altura y sección.
+- "partial": el daño es visible, pero la foto es cerrada y no permite identificar altura o sección.
+- "mismatch": la imagen muestra claramente una cara distinta a la cara evaluada.
+
+Solo cuando location_status sea "complete", cyra_location debe tener exactamente
+4 caracteres. Si es "partial" o "mismatch", devuelve cyra_location con la única
+letra de la cara evaluada (R, L, F o D). Nunca deduzcas altura o sección usando
+solamente la posición del daño dentro de una foto cerrada.
+
+Devuelve también:
+- "location_confidence": confianza de 0 a 1 exclusivamente sobre la ubicación.
+- "location_reason": explicación breve cuando la ubicación sea parcial o incompatible.
+
+REFERENCIAS SUFICIENTES PARA UN CÓDIGO COMPLETO:
+- Laterales: deben permitir reconocer la altura y la sección longitudinal mediante
+  bordes, postes, rieles o una cantidad suficiente de paneles corrugados.
+- Frontal y puerta: deben permitir reconocer altura y panel/poste mediante bordes,
+  postes, hojas, rieles o estructura visible.
+- Un acercamiento que solo muestra el daño y unas pocas corrugaciones no es suficiente.
 
 Para esta demo usa únicamente estas caras como 1er carácter:
 L = lateral izquierdo
@@ -247,6 +271,9 @@ Si la imagen es válida:
       "damage_code": "DT",
       "description": "descripción técnica del daño visible",
       "cyra_location": "DT2N",
+      "location_status": "complete|partial|mismatch",
+      "location_confidence": 0.90,
+      "location_reason": "vacío si es completa; explicación breve si no",
       "location_detail": "ubicación legible",
       "component_code": "DPL",
       "component_name": "Panel/tope de puerta",
@@ -268,7 +295,8 @@ Si la imagen es válida:
 Reglas finales:
 - bbox_x, bbox_y, bbox_w y bbox_h deben estar entre 0 y 1 respecto al tamaño de la imagen.
 - Usa solo códigos de daño permitidos.
-- Usa código de ubicación de 4 caracteres.
+- Usa 4 caracteres solo si location_status es complete; en otro caso usa solo R, L, F o D.
+- No completes una ubicación basándote solo en bbox o en la posición dentro de la foto.
 - Usa componente relacionado con la cara y ubicación.
 - Usa método de reparación coherente con el daño.
 - No clasifiques sombras/reflejos como daño.
@@ -530,6 +558,15 @@ function sanitizeFinding(f) {
 
   out.description = shortenDescription(out.description, 60, out);
   out.location_detail = String(out.location_detail || "").slice(0, 250);
+  out.location_status = String(out.location_status || "").toLowerCase();
+  if (!["complete", "partial", "mismatch"].includes(out.location_status)) {
+    out.location_status = "partial";
+  }
+  const locationConfidence = Number(out.location_confidence);
+  out.location_confidence = Number.isFinite(locationConfidence)
+    ? Math.min(1, Math.max(0, locationConfidence))
+    : 0;
+  out.location_reason = String(out.location_reason || "").slice(0, 300);
   out.dimensions_mm = String(out.dimensions_mm || "No estimado").slice(0, 80);
   out.observations = String(out.observations || "").slice(0, 500);
 
@@ -542,7 +579,7 @@ function sanitizeFinding(f) {
 }
 
 function normalizeCyraLocationByFace(f, body) {
-  const out = { ...f };
+  let out = { ...f };
 
   const faceText = String(
     body.face_name ||
@@ -556,59 +593,7 @@ function normalizeCyraLocationByFace(f, body) {
 
   const c1 = getFaceCode(faceText, body);
 
-  const x = Math.max(0, Math.min(0.999, Number(out.bbox_x) || 0));
-  const y = Math.max(0, Math.min(0.999, Number(out.bbox_y) || 0));
-  const w = Math.max(0.01, Math.min(1, Number(out.bbox_w) || 0.1));
-  const h = Math.max(0.01, Math.min(1, Number(out.bbox_h) || 0.1));
-
-  const x2 = Math.max(x, Math.min(0.999, x + w - 0.001));
-  const cy = y + h / 2;
-
-  let c2 = "X";
-
-  if (h > 0.45) c2 = "X";
-  else if (cy < 0.12) c2 = "H";
-  else if (cy < 0.50) c2 = "T";
-  else if (cy < 0.88) c2 = "B";
-  else c2 = "G";
-
-  let c3 = "1";
-  let c4 = "N";
-
-  if (c1 === "D" || c1 === "F") {
-    const seg4 = (val) => {
-      if (val < 0.12) return 1;
-      if (val < 0.50) return 2;
-      if (val < 0.88) return 3;
-      return 4;
-    };
-
-    const s1 = seg4(x);
-    const s2 = seg4(x2);
-
-    c3 = String(s1);
-    c4 = s1 === s2 ? "N" : String(s2);
-  } else {
-    const seg10 = (val) => {
-      let n = Math.floor(val * 10) + 1;
-      if (n > 10) n = 10;
-      return n === 10 ? "0" : String(n);
-    };
-
-    const s1 = seg10(x);
-    const s2 = seg10(x2);
-
-    c3 = s1;
-    c4 = s1 === s2 ? "N" : s2;
-  }
-
-  const finalCode = `${c1}${c2}${c3}${c4}`.slice(0, 4);
-
-  out.cyra_location = finalCode;
-  out.location = finalCode;
-  out.location_code = finalCode;
-  out.codigo_ubicacion = finalCode;
-  out.cod_cyra = finalCode;
+  out = normalizeLocationDecision(out, c1);
 
   if (c1 === "D") {
     out.face = "Puerta";
@@ -728,6 +713,8 @@ app.post("/api/evaluar-contenedor", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`CYRA AI Evaluator activo en http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT, () => {
+    console.log(`CYRA AI Evaluator activo en http://localhost:${PORT}`);
+  });
+}
