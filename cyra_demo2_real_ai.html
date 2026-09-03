@@ -1347,6 +1347,7 @@ function renderEIR(main){
   ST.findings.forEach(f=>{if(sevC[f.severity]!==undefined)sevC[f.severity]++;});
   const score=ST.score??85;
   const avgConf=Math.round(ST.findings.reduce((s,f)=>s+(f.confidence||.85),0)/(ST.findings.length||1)*100);
+  const partialLocations=ST.findings.filter(f=>f.location_status!=='complete');
   const rows=ST.findings.map((f,i)=>`<tr>
     <td><span style="font-family:monospace;font-size:8px;color:#00b4f0">${f.faceName||f.face}</span></td>
     <td><span style="font-family:monospace;font-size:10px;font-weight:700;color:${f.location_status==='complete'?'#00d278':'#f0a800'};background:rgba(0,210,120,.08);border:1px solid rgba(0,210,120,.2);padding:1px 5px;border-radius:3px;letter-spacing:1px">${esc(f.cyra_location||'—')}${f.location_status==='complete'?'':' (parcial)'}</span></td>
@@ -1355,6 +1356,7 @@ function renderEIR(main){
     <td><span class="sb ${SC[f.severity]}">${SL[f.severity]}</span></td>
     <td style="font-family:monospace;font-size:8px;color:#5a9080">${f.dimensions_mm||'—'}</td>
     <td style="font-size:8px">${(f.repair_method||'—').substring(0,18)}</td>
+    <td style="font-size:7px;max-width:125px;color:${f.location_status==='complete'?'#5a9080':'#f0a800'}">${f.location_status==='complete'?'—':`⚠ ${esc(f.location_reason||'La imagen no permite completar la ubicación CYRA.')}`}</td>
     <td>${f.photo?`<img class="eirimg" src="${f.photo}" onclick="window.open('${f.photo}')">`:'<div style="width:50px;height:36px;border:1px dashed rgba(0,210,120,.13);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#1e4838">📷</div>'}</td>
   </tr>`).join('');
 
@@ -1393,8 +1395,12 @@ function renderEIR(main){
           }).join('')}
         </div>
         <div class="eirst">Registro de daños — IICL</div>
+        ${partialLocations.length?`<div style="margin-bottom:9px;padding:8px 10px;border-radius:4px;border:1px solid rgba(240,168,0,.28);background:rgba(240,168,0,.07);font-family:monospace;color:#f0a800">
+          <div style="font-size:8px;font-weight:700;letter-spacing:.5px">⚠ ${partialLocations.length} UBICACIÓN${partialLocations.length!==1?'ES':''} CYRA PARCIAL${partialLocations.length!==1?'ES':''}</div>
+          <div style="font-size:7px;line-height:1.5;margin-top:3px;color:#b88928">El daño fue identificado, pero la imagen no permitió determinar todos los caracteres de ubicación. Se recomienda evidencia panorámica.</div>
+        </div>`:''}
         ${ST.findings.length>0?`<div style="overflow-x:auto"><table class="eirtbl">
-          <thead><tr><th>Cara</th><th>Cód. CYRA</th><th>Daño</th><th>Descripción</th><th>Severidad</th><th>Dim. mm</th><th>Reparación</th><th>Foto</th></tr></thead>
+          <thead><tr><th>Cara</th><th>Cód. CYRA</th><th>Daño</th><th>Descripción</th><th>Severidad</th><th>Dim. mm</th><th>Reparación</th><th>Obs. ubicación</th><th>Foto</th></tr></thead>
           <tbody>${rows}</tbody>
         </table></div>`:
         `<div style="text-align:center;padding:16px;font-family:monospace;font-size:10px;letter-spacing:1px;color:#00d278;text-transform:uppercase">✓ Sin daños detectados — Contenedor conforme</div>`}
